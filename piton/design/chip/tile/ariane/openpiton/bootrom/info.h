@@ -1,21 +1,21 @@
 // Info string generated with get_bootrom_info(...)
 // OpenPiton + Ariane framework
-// Date: Apr 29 2021 13:23:15
+// Date: Apr 29 2021 13:44:05
 
 const char info[] = {
 "\r\n\r\n"
 "----------------------------------------\r\n"
 "--     OpenPiton+Ariane Platform      --\r\n"
 "----------------------------------------\r\n"
-"OpenPiton Version:                    \r\n"
-"Ariane Version:                       \r\n"
+"OpenPiton Version: 5aed335f                   \r\n"
+"Ariane Version:    5aed335f                   \r\n"
 "                                        \r\n"
 "FPGA Board:        None (Simulation)                   \r\n"
-"Build Date:        Apr 29 2021 13:23:15                   \r\n"
+"Build Date:        Apr 29 2021 13:44:05                   \r\n"
 "                                        \r\n"
-"#X-Tiles:          2                   \r\n"
-"#Y-Tiles:          2                   \r\n"
-"#Cores:            4                   \r\n"
+"#X-Tiles:          1                   \r\n"
+"#Y-Tiles:          1                   \r\n"
+"#Cores:            1                   \r\n"
 "Core Freq:         Unknown                   \r\n"
 "Network:           2d_mesh                   \r\n"
 "DRAM Size:         1024 MB                \r\n"

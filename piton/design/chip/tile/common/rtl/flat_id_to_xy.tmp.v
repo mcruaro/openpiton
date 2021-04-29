@@ -49,27 +49,6 @@ begin
     y_coord = `NOC_Y_WIDTH'd0;
 end
 
-//(`NOC_Y_WIDTH+`NOC_X_WIDTH)'d1: 
-`HOME_ID_WIDTH'd1: 
-begin
-    x_coord = `NOC_X_WIDTH'd1;
-    y_coord = `NOC_Y_WIDTH'd0;
-end
-
-//(`NOC_Y_WIDTH+`NOC_X_WIDTH)'d2: 
-`HOME_ID_WIDTH'd2: 
-begin
-    x_coord = `NOC_X_WIDTH'd0;
-    y_coord = `NOC_Y_WIDTH'd1;
-end
-
-//(`NOC_Y_WIDTH+`NOC_X_WIDTH)'d3: 
-`HOME_ID_WIDTH'd3: 
-begin
-    x_coord = `NOC_X_WIDTH'd1;
-    y_coord = `NOC_Y_WIDTH'd1;
-end
-
         default:
         begin
             x_coord = `NOC_X_WIDTH'dX;

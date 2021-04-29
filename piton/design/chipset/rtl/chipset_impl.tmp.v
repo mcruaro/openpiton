@@ -1761,48 +1761,6 @@ ciop_fake_iob ciop_fake_iob(
 `endif
 
 
-`ifdef RTL_SPARC1
-  .spc1_inst_done    (`TOP_MOD.monitor.pc_cmp.spc1_inst_done),
-  .pc_w1             (`PCPATH1.fdp.pc_w),
-`endif
-`ifdef RTL_PICO1
-  .spc1_inst_done    (1'b1),
-  .pc_w1             ({17'b0, `PICO_CORE1.reg_pc}),
-`endif
-`ifdef RTL_ARIANE1
-  .spc1_inst_done    ( `ARIANE_CORE1.piton_pc_vld   ),
-  .pc_w1             ( `ARIANE_CORE1.piton_pc[48:0] ),
-`endif
-
-
-`ifdef RTL_SPARC2
-  .spc2_inst_done    (`TOP_MOD.monitor.pc_cmp.spc2_inst_done),
-  .pc_w2             (`PCPATH2.fdp.pc_w),
-`endif
-`ifdef RTL_PICO2
-  .spc2_inst_done    (1'b1),
-  .pc_w2             ({17'b0, `PICO_CORE2.reg_pc}),
-`endif
-`ifdef RTL_ARIANE2
-  .spc2_inst_done    ( `ARIANE_CORE2.piton_pc_vld   ),
-  .pc_w2             ( `ARIANE_CORE2.piton_pc[48:0] ),
-`endif
-
-
-`ifdef RTL_SPARC3
-  .spc3_inst_done    (`TOP_MOD.monitor.pc_cmp.spc3_inst_done),
-  .pc_w3             (`PCPATH3.fdp.pc_w),
-`endif
-`ifdef RTL_PICO3
-  .spc3_inst_done    (1'b1),
-  .pc_w3             ({17'b0, `PICO_CORE3.reg_pc}),
-`endif
-`ifdef RTL_ARIANE3
-  .spc3_inst_done    ( `ARIANE_CORE3.piton_pc_vld   ),
-  .pc_w3             ( `ARIANE_CORE3.piton_pc[48:0] ),
-`endif
-
-
     .clk               (chipset_clk),
     .rst_n             (chipset_rst_n)
 //    .rst_n             (`SPARC_CORE0.reset_l)

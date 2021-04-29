@@ -37,18 +37,6 @@ module ciop_fake_iob(
    input                spc0_inst_done,
    input [48:0]         pc_w0
 
-,
-   input                spc1_inst_done,
-   input [48:0]         pc_w1
-
-,
-   input                spc2_inst_done,
-   input [48:0]         pc_w2
-
-,
-   input                spc3_inst_done,
-   input [48:0]         pc_w3
-
 
 
 );
@@ -178,24 +166,6 @@ begin
     dest_y = `NOC_Y_WIDTH'd0;
 end
 
-32'd1:
-begin
-    dest_x = `NOC_X_WIDTH'd1;
-    dest_y = `NOC_Y_WIDTH'd0;
-end
-
-32'd2:
-begin
-    dest_x = `NOC_X_WIDTH'd0;
-    dest_y = `NOC_Y_WIDTH'd1;
-end
-
-32'd3:
-begin
-    dest_x = `NOC_X_WIDTH'd1;
-    dest_y = `NOC_Y_WIDTH'd1;
-end
-
     default:
     begin
         dest_x = `NOC_X_WIDTH'dX;
@@ -209,18 +179,6 @@ end
 
 wire                             spc0_inst_done_buf  = spc0_inst_done;
 wire [48:0]                      pc_w0_buf           = pc_w0;
-
-
-wire                             spc1_inst_done_buf  = spc1_inst_done;
-wire [48:0]                      pc_w1_buf           = pc_w1;
-
-
-wire                             spc2_inst_done_buf  = spc2_inst_done;
-wire [48:0]                      pc_w2_buf           = pc_w2;
-
-
-wire                             spc3_inst_done_buf  = spc3_inst_done;
-wire [48:0]                      pc_w3_buf           = pc_w3;
 
 
 
@@ -248,18 +206,6 @@ begin
             //pc event
             spc0_inst_done_buf,
             pc_w0_buf
-,
-            //pc event
-            spc1_inst_done_buf,
-            pc_w1_buf
-,
-            //pc event
-            spc2_inst_done_buf,
-            pc_w2_buf
-,
-            //pc event
-            spc3_inst_done_buf,
-            pc_w3_buf
 
 
         );
@@ -267,18 +213,6 @@ begin
             
         if (spc0_inst_done_buf) begin
             report_pc({{16{pc_w0_buf[39]}}, pc_w0_buf});
-        end
-
-        if (spc1_inst_done_buf) begin
-            report_pc({{16{pc_w1_buf[39]}}, pc_w1_buf});
-        end
-
-        if (spc2_inst_done_buf) begin
-            report_pc({{16{pc_w2_buf[39]}}, pc_w2_buf});
-        end
-
-        if (spc3_inst_done_buf) begin
-            report_pc({{16{pc_w3_buf[39]}}, pc_w3_buf});
         end
 
 
