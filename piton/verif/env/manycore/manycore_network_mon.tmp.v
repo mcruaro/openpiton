@@ -27,7 +27,7 @@
 
 
 // /home/ruaro/openpiton/piton/verif/env/manycore/devices_ariane.xml
-`define NUM_TILES 1
+`define NUM_TILES 2
 
 
 `ifndef USE_TEST_TOP // useless for older TOPs
@@ -109,6 +109,56 @@ begin
         $display("%d: TILE0 noc3 router out W data: 0x%x ", $time,`CHIP.tile_0_0_out_W_noc3_data);
     end
 `endif
+`ifdef RTL_SPARC1
+    if (`CHIP.tile_0_1_out_N_noc1_valid)
+    begin
+        $display("%d: TILE1 noc1 router out N data: 0x%x ", $time,`CHIP.tile_0_1_out_N_noc1_data);
+    end
+    if (`CHIP.tile_0_1_out_S_noc1_valid)
+    begin
+        $display("%d: TILE1 noc1 router out S data: 0x%x ", $time,`CHIP.tile_0_1_out_S_noc1_data);
+    end
+    if (`CHIP.tile_0_1_out_E_noc1_valid)
+    begin
+        $display("%d: TILE1 noc1 router out E data: 0x%x ", $time,`CHIP.tile_0_1_out_E_noc1_data);
+    end
+    if (`CHIP.tile_0_1_out_W_noc1_valid)
+    begin
+        $display("%d: TILE1 noc1 router out W data: 0x%x ", $time,`CHIP.tile_0_1_out_W_noc1_data);
+    end
+    if (`CHIP.tile_0_1_out_N_noc2_valid)
+    begin
+        $display("%d: TILE1 noc2 router out N data: 0x%x ", $time,`CHIP.tile_0_1_out_N_noc2_data);
+    end
+    if (`CHIP.tile_0_1_out_S_noc2_valid)
+    begin
+        $display("%d: TILE1 noc2 router out S data: 0x%x ", $time,`CHIP.tile_0_1_out_S_noc2_data);
+    end
+    if (`CHIP.tile_0_1_out_E_noc2_valid)
+    begin
+        $display("%d: TILE1 noc2 router out E data: 0x%x ", $time,`CHIP.tile_0_1_out_E_noc2_data);
+    end
+    if (`CHIP.tile_0_1_out_W_noc2_valid)
+    begin
+        $display("%d: TILE1 noc2 router out W data: 0x%x ", $time,`CHIP.tile_0_1_out_W_noc2_data);
+    end
+    if (`CHIP.tile_0_1_out_N_noc3_valid)
+    begin
+        $display("%d: TILE1 noc3 router out N data: 0x%x ", $time,`CHIP.tile_0_1_out_N_noc3_data);
+    end
+    if (`CHIP.tile_0_1_out_S_noc3_valid)
+    begin
+        $display("%d: TILE1 noc3 router out S data: 0x%x ", $time,`CHIP.tile_0_1_out_S_noc3_data);
+    end
+    if (`CHIP.tile_0_1_out_E_noc3_valid)
+    begin
+        $display("%d: TILE1 noc3 router out E data: 0x%x ", $time,`CHIP.tile_0_1_out_E_noc3_data);
+    end
+    if (`CHIP.tile_0_1_out_W_noc3_valid)
+    begin
+        $display("%d: TILE1 noc3 router out W data: 0x%x ", $time,`CHIP.tile_0_1_out_W_noc3_data);
+    end
+`endif
 
     end
 end
@@ -143,6 +193,7 @@ error_noc = 1;
 error_x = 0;
 error_y = 0;
 end
+`ifndef RTL_SPARC1
 boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc1_valid;
 if (boundary_err == 1)
 begin
@@ -151,6 +202,7 @@ error_noc = 1;
 error_x = 0;
 error_y = 0;
 end
+`endif
 boundary_err = boundary_err | `CHIP.tile_0_0_out_N_noc2_valid;
 if (boundary_err == 1)
 begin
@@ -167,6 +219,7 @@ error_noc = 2;
 error_x = 0;
 error_y = 0;
 end
+`ifndef RTL_SPARC1
 boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc2_valid;
 if (boundary_err == 1)
 begin
@@ -175,6 +228,7 @@ error_noc = 2;
 error_x = 0;
 error_y = 0;
 end
+`endif
 boundary_err = boundary_err | `CHIP.tile_0_0_out_N_noc3_valid;
 if (boundary_err == 1)
 begin
@@ -191,6 +245,7 @@ error_noc = 3;
 error_x = 0;
 error_y = 0;
 end
+`ifndef RTL_SPARC1
 boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc3_valid;
 if (boundary_err == 1)
 begin
@@ -199,6 +254,7 @@ error_noc = 3;
 error_x = 0;
 error_y = 0;
 end
+`endif
 `endif
 
             if (boundary_err == 1)
@@ -212,6 +268,193 @@ end
             
 boundary_err = 0;
 `ifndef RTL_SPARC0
+`ifdef RTL_SPARC1
+boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 1;
+error_x = 0;
+error_y = 0;
+end
+`endif
+`ifdef RTL_SPARC1
+boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 2;
+error_x = 0;
+error_y = 0;
+end
+`endif
+`ifdef RTL_SPARC1
+boundary_err = boundary_err | `CHIP.tile_0_0_out_E_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 3;
+error_x = 0;
+error_y = 0;
+end
+`endif
+
+            if (boundary_err == 1)
+            begin
+                $display("%d : Simulation -> FAIL. network_mon: packet from invalid tile_%0d_%0d_out_%0s_noc%0d", $time, error_y, error_x, error_dir, error_noc);
+                `ifndef VERILATOR
+                repeat(5)@(posedge clk);
+                `endif
+                `MONITOR_PATH.fail("network_mon: network_mon: packet from invalid tile");
+            end
+            
+`endif
+`ifdef RTL_SPARC1
+boundary_err = boundary_err | `CHIP.tile_0_1_out_N_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "N";
+error_noc = 1;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_S_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "S";
+error_noc = 1;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_E_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 1;
+error_x = 1;
+error_y = 0;
+end
+`ifndef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 1;
+error_x = 1;
+error_y = 0;
+end
+`endif
+boundary_err = boundary_err | `CHIP.tile_0_1_out_N_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "N";
+error_noc = 2;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_S_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "S";
+error_noc = 2;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_E_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 2;
+error_x = 1;
+error_y = 0;
+end
+`ifndef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 2;
+error_x = 1;
+error_y = 0;
+end
+`endif
+boundary_err = boundary_err | `CHIP.tile_0_1_out_N_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "N";
+error_noc = 3;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_S_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "S";
+error_noc = 3;
+error_x = 1;
+error_y = 0;
+end
+boundary_err = boundary_err | `CHIP.tile_0_1_out_E_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "E";
+error_noc = 3;
+error_x = 1;
+error_y = 0;
+end
+`ifndef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 3;
+error_x = 1;
+error_y = 0;
+end
+`endif
+`endif
+
+            if (boundary_err == 1)
+            begin
+                $display("%d : Simulation -> FAIL. network_mon: packet out of valid bound from tile_%0d_%0d_out_%0s_noc%0d", $time, error_y, error_x, error_dir, error_noc);
+                `ifndef VERILATOR
+                repeat(5)@(posedge clk);
+                `endif
+                `MONITOR_PATH.fail("network_mon: network_mon: packet going out of valid bound");
+            end
+            
+boundary_err = 0;
+`ifndef RTL_SPARC1
+`ifdef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc1_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 1;
+error_x = 1;
+error_y = 0;
+end
+`endif
+`ifdef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc2_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 2;
+error_x = 1;
+error_y = 0;
+end
+`endif
+`ifdef RTL_SPARC0
+boundary_err = boundary_err | `CHIP.tile_0_1_out_W_noc3_valid;
+if (boundary_err == 1)
+begin
+error_dir = "W";
+error_noc = 3;
+error_x = 1;
+error_y = 0;
+end
+`endif
 
             if (boundary_err == 1)
             begin

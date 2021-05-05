@@ -33,19 +33,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module dynamic_node_top_para(clk,
 		    reset_in,
-        dataIn_0, dataIn_1, 
-        validIn_0, validIn_1, 
-        yummyIn_0,yummyIn_1,
+        dataIn_0, dataIn_1, dataIn_2, 
+        validIn_0, validIn_1, validIn_2, 
+        yummyIn_0,yummyIn_1,yummyIn_2,
 		    myLocX,
 		    myLocY,
             myChipID,
 		    store_meter_partner_address_X,
 		    store_meter_partner_address_Y,
 		    ec_cfg,
-        dataOut_0, dataOut_1, 
-        validOut_0, validOut_1, 
-        yummyOut_0,yummyOut_1,
-		    thanksIn_1,
+        dataOut_0, dataOut_1, dataOut_2, 
+        validOut_0, validOut_1, validOut_2, 
+        yummyOut_0,yummyOut_1,yummyOut_2,
+		    thanksIn_2,
 		    external_interrupt,
 		    store_meter_ack_partner,
 		    store_meter_ack_non_partner,
@@ -58,12 +58,15 @@ input reset_in;
 
 input [`DATA_WIDTH-1:0] dataIn_0;
 input [`DATA_WIDTH-1:0] dataIn_1;
+input [`DATA_WIDTH-1:0] dataIn_2;
 
 input validIn_0;
 input validIn_1;
+input validIn_2;
 
 input yummyIn_0;
 input yummyIn_1;
+input yummyIn_2;
 
 /*
 //original 
@@ -92,16 +95,19 @@ input [`CHIP_ID_WIDTH-1:0] myChipID;
 input [4:0] store_meter_partner_address_X;
 input [4:0] store_meter_partner_address_Y;
 
-input [5:0] ec_cfg;            // NESWP 3 bits each selecter of event to monitor
+input [8:0] ec_cfg;            // NESWP 3 bits each selecter of event to monitor
 
 output [`DATA_WIDTH-1:0] dataOut_0;
 output [`DATA_WIDTH-1:0] dataOut_1;
+output [`DATA_WIDTH-1:0] dataOut_2;
 
 output validOut_0;
 output validOut_1;
+output validOut_2;
 
 output yummyOut_0;
 output yummyOut_1;
+output yummyOut_2;
 
 /*
 //original
@@ -123,7 +129,7 @@ output yummyOut_S;
 output yummyOut_W;
 output yummyOut_P;		// yummy signal to processor's output buffer
 */
-output thanksIn_1;		// thanksIn to processor's space_avail
+output thanksIn_2;		// thanksIn to processor's space_avail
 
 output external_interrupt;	//is used for the proc to know
 				//that an external interrupt occured
@@ -133,10 +139,11 @@ output store_meter_ack_non_partner;  // strobes high when a memory ack word is p
                                      // and the sender ID does not match the "partner port" id from the STORE_METER
 
 
-output [1:0] ec_out;
+output [2:0] ec_out;
 
 wire   ec_wants_to_send_but_cannot_0;
 wire   ec_wants_to_send_but_cannot_1;
+wire   ec_wants_to_send_but_cannot_2;
 
 // end port declarations
 
@@ -148,55 +155,83 @@ wire   ec_wants_to_send_but_cannot_1;
 //wires
 wire node_0_input_tail;
 wire node_1_input_tail;
+wire node_2_input_tail;
 
 wire [`DATA_WIDTH-1:0] node_0_input_data;
 wire [`DATA_WIDTH-1:0] node_1_input_data;
+wire [`DATA_WIDTH-1:0] node_2_input_data;
 
 wire node_0_input_valid;
 wire node_1_input_valid;
+wire node_2_input_valid;
 
 wire thanks_0_to_0;
 wire thanks_0_to_1;
+wire thanks_0_to_2;
 
 wire thanks_1_to_0;
 wire thanks_1_to_1;
+wire thanks_1_to_2;
+
+wire thanks_2_to_0;
+wire thanks_2_to_1;
+wire thanks_2_to_2;
 
 wire route_req_0_to_0;
 wire route_req_0_to_1;
+wire route_req_0_to_2;
 
 wire route_req_1_to_0;
 wire route_req_1_to_1;
+wire route_req_1_to_2;
 
-wire default_ready_0_to_0;
+wire route_req_2_to_0;
+wire route_req_2_to_1;
+wire route_req_2_to_2;
+
+wire default_ready_1_to_0;
 wire default_ready_0_to_1;
+wire default_ready_1_to_2;
 
 wire yummyOut_0_internal;
 wire yummyOut_1_internal;
+wire yummyOut_2_internal;
 
 wire validOut_0_internal;
 wire validOut_1_internal;
+wire validOut_2_internal;
 
 wire [`DATA_WIDTH-1:0] dataOut_0_internal;
 wire [`DATA_WIDTH-1:0] dataOut_1_internal;
+wire [`DATA_WIDTH-1:0] dataOut_2_internal;
 
 wire yummyOut_0_flip1_out;
+wire yummyOut_1_flip1_out;
 
 wire validOut_0_flip1_out;
+wire validOut_1_flip1_out;
 
 wire [`DATA_WIDTH-1:0] dataOut_0_flip1_out;
+wire [`DATA_WIDTH-1:0] dataOut_1_flip1_out;
 
 wire yummyIn_0_internal;
 wire yummyIn_1_internal;
+wire yummyIn_2_internal;
 
 wire validIn_0_internal;
+wire validIn_1_internal;
 
 wire [`DATA_WIDTH-1:0] dataIn_0_internal;
+wire [`DATA_WIDTH-1:0] dataIn_1_internal;
 
 wire yummyIn_0_flip1_out;
+wire yummyIn_1_flip1_out;
 
 wire validIn_0_flip1_out;
+wire validIn_1_flip1_out;
 
 wire [`DATA_WIDTH-1:0] dataIn_0_flip1_out;
+wire [`DATA_WIDTH-1:0] dataIn_1_flip1_out;
 
 /*
 //original
@@ -289,10 +324,11 @@ wire   reset;
 // event counter logic
 //
 //
-reg ec_thanks_0_to_0_reg, ec_thanks_0_to_1_reg;
-reg ec_thanks_1_to_0_reg, ec_thanks_1_to_1_reg;
-reg ec_wants_to_send_but_cannot_0_reg, ec_wants_to_send_but_cannot_1_reg;
-reg ec_0_input_valid_reg, ec_1_input_valid_reg;
+reg ec_thanks_0_to_0_reg, ec_thanks_0_to_1_reg, ec_thanks_0_to_2_reg;
+reg ec_thanks_1_to_0_reg, ec_thanks_1_to_1_reg, ec_thanks_1_to_2_reg;
+reg ec_thanks_2_to_0_reg, ec_thanks_2_to_1_reg, ec_thanks_2_to_2_reg;
+reg ec_wants_to_send_but_cannot_0_reg, ec_wants_to_send_but_cannot_1_reg, ec_wants_to_send_but_cannot_2_reg;
+reg ec_0_input_valid_reg, ec_1_input_valid_reg, ec_2_input_valid_reg;
 
 /*
 //original
@@ -309,12 +345,15 @@ reg ec_north_input_valid_reg, ec_east_input_valid_reg, ec_south_input_valid_reg,
 always @(posedge clk)
   begin
     
-    ec_thanks_0_to_0_reg <= thanks_0_to_0; ec_thanks_0_to_1_reg <= thanks_0_to_1;
-    ec_thanks_1_to_0_reg <= thanks_1_to_0; ec_thanks_1_to_1_reg <= thanks_1_to_1;
+    ec_thanks_0_to_0_reg <= thanks_0_to_0; ec_thanks_0_to_1_reg <= thanks_0_to_1; ec_thanks_0_to_2_reg <= thanks_0_to_2;
+    ec_thanks_1_to_0_reg <= thanks_1_to_0; ec_thanks_1_to_1_reg <= thanks_1_to_1; ec_thanks_1_to_2_reg <= thanks_1_to_2;
+    ec_thanks_2_to_0_reg <= thanks_2_to_0; ec_thanks_2_to_1_reg <= thanks_2_to_1; ec_thanks_2_to_2_reg <= thanks_2_to_2;
     ec_wants_to_send_but_cannot_0_reg <= ec_wants_to_send_but_cannot_0;
     ec_wants_to_send_but_cannot_1_reg <= ec_wants_to_send_but_cannot_1;
+    ec_wants_to_send_but_cannot_2_reg <= ec_wants_to_send_but_cannot_2;
     ec_0_input_valid_reg <= node_0_input_valid;
     ec_1_input_valid_reg <= node_1_input_valid;
+    ec_2_input_valid_reg <= node_2_input_valid;
 
     /*
     //original
@@ -336,8 +375,9 @@ always @(posedge clk)
     */
   end
 
-wire ec_thanks_to_0= ec_thanks_0_to_0_reg | ec_thanks_1_to_0_reg ;
-wire ec_thanks_to_1= ec_thanks_0_to_1_reg | ec_thanks_1_to_1_reg ;
+wire ec_thanks_to_0= ec_thanks_0_to_0_reg | ec_thanks_1_to_0_reg | ec_thanks_2_to_0_reg ;
+wire ec_thanks_to_1= ec_thanks_0_to_1_reg | ec_thanks_1_to_1_reg | ec_thanks_2_to_1_reg ;
+wire ec_thanks_to_2= ec_thanks_0_to_2_reg | ec_thanks_1_to_2_reg | ec_thanks_2_to_2_reg ;
 
 /*
 //original
@@ -348,17 +388,27 @@ wire ec_thanks_to_1= ec_thanks_0_to_1_reg | ec_thanks_1_to_1_reg ;
    wire ec_thanks_to_p = ec_thanks_n_to_p_reg | ec_thanks_e_to_p_reg | ec_thanks_s_to_p_reg | ec_thanks_w_to_p_reg | ec_thanks_p_to_p_reg;
 */
 one_of_n_plus_3 #(1) ec_mux_0(.in0(ec_wants_to_send_but_cannot_0),
-                        .in1(ec_thanks_1_to_0_reg),
-                        .in2(ec_thanks_0_to_0_reg),
-                        .in3(ec_thanks_to_0),
-                        .in4(ec_0_input_valid_reg & ~ec_thanks_to_0),
+                        .in1(ec_thanks_2_to_0_reg),
+                        .in2(ec_thanks_1_to_0_reg),
+                        .in3(ec_thanks_0_to_0_reg),
+                        .in4(ec_thanks_to_0),
+                        .in5(ec_0_input_valid_reg & ~ec_thanks_to_0),
+                        .sel(ec_cfg[8:6]),
+                        .out(ec_out[2]));
+one_of_n_plus_3 #(1) ec_mux_1(.in0(ec_wants_to_send_but_cannot_1),
+                        .in1(ec_thanks_2_to_1_reg),
+                        .in2(ec_thanks_1_to_1_reg),
+                        .in3(ec_thanks_0_to_1_reg),
+                        .in4(ec_thanks_to_1),
+                        .in5(ec_1_input_valid_reg & ~ec_thanks_to_1),
                         .sel(ec_cfg[5:3]),
                         .out(ec_out[1]));
-one_of_n_plus_3 #(1) ec_mux_1(.in0(ec_wants_to_send_but_cannot_1),
-                        .in1(ec_thanks_1_to_1_reg),
-                        .in2(ec_thanks_0_to_1_reg),
-                        .in3(ec_thanks_to_1),
-                        .in4(ec_1_input_valid_reg & ~ec_thanks_to_1),
+one_of_n_plus_3 #(1) ec_mux_2(.in0(ec_wants_to_send_but_cannot_2),
+                        .in1(ec_thanks_2_to_2_reg),
+                        .in2(ec_thanks_1_to_2_reg),
+                        .in3(ec_thanks_0_to_2_reg),
+                        .in4(ec_thanks_to_2),
+                        .in5(ec_2_input_valid_reg & ~ec_thanks_to_2),
                         .sel(ec_cfg[2:0]),
                         .out(ec_out[0]));
 
@@ -492,7 +542,7 @@ end
 //wire regs
 
 //assigns
-assign thanksIn_1 = thanks_0_to_1 | thanks_1_to_1 ;
+assign thanksIn_2 = thanks_0_to_2 | thanks_1_to_2 | thanks_2_to_2 ;
 
 /*
 //original
@@ -502,41 +552,53 @@ assign thanksIn_P = thanks_n_to_p | thanks_e_to_p | thanks_s_to_p | thanks_w_to_
 //assign validOut_E = validOut_E_internal;
 //assign validOut_S = validOut_S_internal;
 //assign validOut_W = validOut_W_internal;
-assign validOut_1 = validOut_1_internal;
+assign validOut_2 = validOut_2_internal;
 
 //assign dataOut_N = dataOut_N_internal;
 //assign dataOut_E = dataOut_E_internal;
 //assign dataOut_S = dataOut_S_internal;
 //assign dataOut_W = dataOut_W_internal;
-assign dataOut_1 = dataOut_1_internal;
+assign dataOut_2 = dataOut_2_internal;
 
 //more assigns
-assign yummyIn_1_internal = yummyIn_1;
-assign yummyOut_1 = yummyOut_1_internal;
+assign yummyIn_2_internal = yummyIn_2;
+assign yummyOut_2 = yummyOut_2_internal;
 
 flip_bus #(1, 14) yummyOut_0_flip1(yummyOut_0_internal, yummyOut_0_flip1_out);
+flip_bus #(1, 14) yummyOut_1_flip1(yummyOut_1_internal, yummyOut_1_flip1_out);
 
 flip_bus #(1, 21) yummyOut_0_flip2(yummyOut_0_flip1_out, yummyOut_0);
+flip_bus #(1, 21) yummyOut_1_flip2(yummyOut_1_flip1_out, yummyOut_1);
 
 flip_bus #(1, 14) validOut_0_flip1(validOut_0_internal, validOut_0_flip1_out);
+flip_bus #(1, 14) validOut_1_flip1(validOut_1_internal, validOut_1_flip1_out);
 
 flip_bus #(1, 21) validOut_0_flip2(validOut_0_flip1_out, validOut_0);
+flip_bus #(1, 21) validOut_1_flip2(validOut_1_flip1_out, validOut_1);
 
 flip_bus #(`DATA_WIDTH, 14) dataOut_0_flip1(dataOut_0_internal, dataOut_0_flip1_out);
+flip_bus #(`DATA_WIDTH, 14) dataOut_1_flip1(dataOut_1_internal, dataOut_1_flip1_out);
 
 flip_bus #(`DATA_WIDTH, 21) dataOut_0_flip2(dataOut_0_flip1_out, dataOut_0);
+flip_bus #(`DATA_WIDTH, 21) dataOut_1_flip2(dataOut_1_flip1_out, dataOut_1);
 
 flip_bus #(1, 14) yummyIn_0_flip1(yummyIn_0, yummyIn_0_flip1_out);
+flip_bus #(1, 14) yummyIn_1_flip1(yummyIn_1, yummyIn_1_flip1_out);
 
 flip_bus #(1, 10) yummyIn_0_flip2(yummyIn_0_flip1_out, yummyIn_0_internal);
+flip_bus #(1, 10) yummyIn_1_flip2(yummyIn_1_flip1_out, yummyIn_1_internal);
 
 flip_bus #(1, 14) validIn_0_flip1(validIn_0, validIn_0_flip1_out);
+flip_bus #(1, 14) validIn_1_flip1(validIn_1, validIn_1_flip1_out);
 
 flip_bus #(1, 10) validIn_0_flip2(validIn_0_flip1_out, validIn_0_internal);
+flip_bus #(1, 10) validIn_1_flip2(validIn_1_flip1_out, validIn_1_internal);
 
 flip_bus #(`DATA_WIDTH, 14) dataIn_0_flip1(dataIn_0, dataIn_0_flip1_out);
+flip_bus #(`DATA_WIDTH, 14) dataIn_1_flip1(dataIn_1, dataIn_1_flip1_out);
 
 flip_bus #(`DATA_WIDTH, 10) dataIn_0_flip2(dataIn_0_flip1_out, dataIn_0_internal);
+flip_bus #(`DATA_WIDTH, 10) dataIn_1_flip2(dataIn_1_flip1_out, dataIn_1_internal);
 
 
 /*
@@ -620,8 +682,9 @@ flip_bus #(`DATA_WIDTH, 10) dataIn_W_flip2(dataIn_W_flip1_out, dataIn_W_internal
 //the nibs inside of them.
 
 //dynamic inputs
-dynamic_input_top_4_para node_0_input(.route_req_0_out(route_req_0_to_0), .route_req_1_out(route_req_0_to_1), .default_ready_0_out(default_ready_0_to_0), .default_ready_1_out(default_ready_0_to_1), .tail_out(node_0_input_tail), .yummy_out(yummyOut_0_internal), .data_out(node_0_input_data), .valid_out(node_0_input_valid), .clk(clk), .reset(reset), .my_loc_x_in(myLocX_f), .my_loc_y_in(myLocY_f), .my_chip_id_in(myChipID_f), .valid_in(validIn_0_internal), .data_in(dataIn_0_internal), .thanks_0(thanks_0_to_0), .thanks_1(thanks_1_to_0));
-dynamic_input_top_4_para node_1_input(.route_req_0_out(route_req_1_to_0), .route_req_1_out(route_req_1_to_1), .default_ready_0_out(), .default_ready_1_out(), .tail_out(node_1_input_tail), .yummy_out(yummyOut_1_internal), .data_out(node_1_input_data), .valid_out(node_1_input_valid), .clk(clk), .reset(reset), .my_loc_x_in(myLocX_f), .my_loc_y_in(myLocY_f), .my_chip_id_in(myChipID_f), .valid_in(validIn_1), .data_in(dataIn_1), .thanks_0(thanks_0_to_1), .thanks_1(thanks_1_to_1));
+dynamic_input_top_4_para node_0_input(.route_req_0_out(route_req_0_to_0), .route_req_1_out(route_req_0_to_1), .route_req_2_out(route_req_0_to_2), .default_ready_0_out(), .default_ready_1_out(default_ready_0_to_1), .default_ready_2_out(), .tail_out(node_0_input_tail), .yummy_out(yummyOut_0_internal), .data_out(node_0_input_data), .valid_out(node_0_input_valid), .clk(clk), .reset(reset), .my_loc_x_in(myLocX_f), .my_loc_y_in(myLocY_f), .my_chip_id_in(myChipID_f), .valid_in(validIn_0_internal), .data_in(dataIn_0_internal), .thanks_0(thanks_0_to_0), .thanks_1(thanks_1_to_0), .thanks_2(thanks_2_to_0));
+dynamic_input_top_4_para node_1_input(.route_req_0_out(route_req_1_to_0), .route_req_1_out(route_req_1_to_1), .route_req_2_out(route_req_1_to_2), .default_ready_0_out(default_ready_1_to_0), .default_ready_1_out(), .default_ready_2_out(default_ready_1_to_2), .tail_out(node_1_input_tail), .yummy_out(yummyOut_1_internal), .data_out(node_1_input_data), .valid_out(node_1_input_valid), .clk(clk), .reset(reset), .my_loc_x_in(myLocX_f), .my_loc_y_in(myLocY_f), .my_chip_id_in(myChipID_f), .valid_in(validIn_1_internal), .data_in(dataIn_1_internal), .thanks_0(thanks_0_to_1), .thanks_1(thanks_1_to_1), .thanks_2(thanks_2_to_1));
+dynamic_input_top_4_para node_2_input(.route_req_0_out(route_req_2_to_0), .route_req_1_out(route_req_2_to_1), .route_req_2_out(route_req_2_to_2), .default_ready_0_out(), .default_ready_1_out(), .default_ready_2_out(), .tail_out(node_2_input_tail), .yummy_out(yummyOut_2_internal), .data_out(node_2_input_data), .valid_out(node_2_input_valid), .clk(clk), .reset(reset), .my_loc_x_in(myLocX_f), .my_loc_y_in(myLocY_f), .my_chip_id_in(myChipID_f), .valid_in(validIn_2), .data_in(dataIn_2), .thanks_0(thanks_0_to_2), .thanks_1(thanks_1_to_2), .thanks_2(thanks_2_to_2));
 
 /*
 //original
@@ -638,8 +701,9 @@ dynamic_input_top_16 proc_input(.route_req_n_out(route_req_p_to_n), .route_req_e
 
 
 //dynamic outputs
-dynamic_output_top_para node_0_output(.data_out(dataOut_0_internal), .thanks_0_out(thanks_0_to_1), .thanks_1_out(thanks_0_to_0), .valid_out(validOut_0_internal), .popped_interrupt_mesg_out(), .popped_memory_ack_mesg_out(), .popped_memory_ack_mesg_out_sender(), .ec_wants_to_send_but_cannot(ec_wants_to_send_but_cannot_0), .clk(clk), .reset(reset), .route_req_0_in(route_req_1_to_0), .route_req_1_in(route_req_0_to_0), .tail_0_in(node_1_input_tail), .tail_1_in(node_0_input_tail), .data_0_in(node_1_input_data), .data_1_in(node_0_input_data), .valid_0_in(node_1_input_valid), .valid_1_in(node_0_input_valid), .default_ready_in(default_ready_0_to_0),.yummy_in(yummyIn_0_internal));
-dynamic_output_top_para #(1'b0) node_1_output(.data_out(dataOut_1_internal), .thanks_0_out(thanks_1_to_0), .thanks_1_out(thanks_1_to_1), .valid_out(validOut_1_internal), .popped_interrupt_mesg_out(external_interrupt), .popped_memory_ack_mesg_out(store_ack_received), .popped_memory_ack_mesg_out_sender(store_ack_addr), .ec_wants_to_send_but_cannot(ec_wants_to_send_but_cannot_1), .clk(clk), .reset(reset), .route_req_0_in(route_req_0_to_1), .route_req_1_in(route_req_1_to_1), .tail_0_in(node_0_input_tail), .tail_1_in(node_1_input_tail), .data_0_in(node_0_input_data), .data_1_in(node_1_input_data), .valid_0_in(node_0_input_valid), .valid_1_in(node_1_input_valid), .default_ready_in(default_ready_0_to_1),.yummy_in(yummyIn_1_internal));
+dynamic_output_top_para node_0_output(.data_out(dataOut_0_internal), .thanks_0_out(thanks_0_to_1), .thanks_1_out(thanks_0_to_2), .thanks_2_out(thanks_0_to_0), .valid_out(validOut_0_internal), .popped_interrupt_mesg_out(), .popped_memory_ack_mesg_out(), .popped_memory_ack_mesg_out_sender(), .ec_wants_to_send_but_cannot(ec_wants_to_send_but_cannot_0), .clk(clk), .reset(reset), .route_req_0_in(route_req_1_to_0), .route_req_1_in(route_req_2_to_0), .route_req_2_in(route_req_0_to_0), .tail_0_in(node_1_input_tail), .tail_1_in(node_2_input_tail), .tail_2_in(node_0_input_tail), .data_0_in(node_1_input_data), .data_1_in(node_2_input_data), .data_2_in(node_0_input_data), .valid_0_in(node_1_input_valid), .valid_1_in(node_2_input_valid), .valid_2_in(node_0_input_valid), .default_ready_in(default_ready_1_to_0),.yummy_in(yummyIn_0_internal));
+dynamic_output_top_para node_1_output(.data_out(dataOut_1_internal), .thanks_0_out(thanks_1_to_0), .thanks_1_out(thanks_1_to_2), .thanks_2_out(thanks_1_to_1), .valid_out(validOut_1_internal), .popped_interrupt_mesg_out(), .popped_memory_ack_mesg_out(), .popped_memory_ack_mesg_out_sender(), .ec_wants_to_send_but_cannot(ec_wants_to_send_but_cannot_1), .clk(clk), .reset(reset), .route_req_0_in(route_req_0_to_1), .route_req_1_in(route_req_2_to_1), .route_req_2_in(route_req_1_to_1), .tail_0_in(node_0_input_tail), .tail_1_in(node_2_input_tail), .tail_2_in(node_1_input_tail), .data_0_in(node_0_input_data), .data_1_in(node_2_input_data), .data_2_in(node_1_input_data), .valid_0_in(node_0_input_valid), .valid_1_in(node_2_input_valid), .valid_2_in(node_1_input_valid), .default_ready_in(default_ready_0_to_1),.yummy_in(yummyIn_1_internal));
+dynamic_output_top_para #(1'b0) node_2_output(.data_out(dataOut_2_internal), .thanks_0_out(thanks_2_to_1), .thanks_1_out(thanks_2_to_0), .thanks_2_out(thanks_2_to_2), .valid_out(validOut_2_internal), .popped_interrupt_mesg_out(external_interrupt), .popped_memory_ack_mesg_out(store_ack_received), .popped_memory_ack_mesg_out_sender(store_ack_addr), .ec_wants_to_send_but_cannot(ec_wants_to_send_but_cannot_2), .clk(clk), .reset(reset), .route_req_0_in(route_req_1_to_2), .route_req_1_in(route_req_0_to_2), .route_req_2_in(route_req_2_to_2), .tail_0_in(node_1_input_tail), .tail_1_in(node_0_input_tail), .tail_2_in(node_2_input_tail), .data_0_in(node_1_input_data), .data_1_in(node_0_input_data), .data_2_in(node_2_input_data), .valid_0_in(node_1_input_valid), .valid_1_in(node_0_input_valid), .valid_2_in(node_2_input_valid), .default_ready_in(default_ready_1_to_2),.yummy_in(yummyIn_2_internal));
 
 /*
 //original

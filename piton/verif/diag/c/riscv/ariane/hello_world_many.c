@@ -18,16 +18,39 @@
 #include <stdio.h>
 #include "util.h"
 
+// synchronization variable
+volatile static uint32_t amo_cnt = 0;
+
+void print_core_1(){
+  for(int i=0; i<5; i++){
+    printf("Core 1 loop %d\n", i);
+  }
+}
+
+void print_core_2(){
+  for(int i=0; i<5; i++){
+    printf("Core 2 loop %d\n", i);
+  }
+}
+
 int main(int argc, char** argv) {
 
-  // synchronization variable
-  volatile static uint32_t amo_cnt = 0;
 
+
+  int core_id = argv[0][0];
+
+  
+  if (core_id == 0){
+    print_core_1();
+  } else if (core_id == 1){
+    print_core_2();
+  }
+  
   // synchronize with other cores and wait until it is this core's turn
-  while(argv[0][0] != amo_cnt);
+  //while(argv[0][0] != amo_cnt);
 
   // assemble number and print
-  printf("Hello world, this is hart %d of %d harts!\n", argv[0][0], argv[0][1]);
+  //printf("Hello world, this is hart %d of %d harts!\n", argv[0][0], argv[0][1]);
 
   // increment atomic counter
   ATOMIC_OP(amo_cnt, 1, add, w);

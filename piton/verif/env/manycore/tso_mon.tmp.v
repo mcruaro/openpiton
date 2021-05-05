@@ -122,6 +122,19 @@ reg        spc0_dfq_wr_en_d1;
 `endif
 
 
+`ifdef RTL_SPARC1
+`ifndef RTL_SPU
+wire       spc1_dfq_byp_ff_en      = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_byp_ff_en;
+wire       spc1_dfq_wr_en          = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_wr_en;
+`else
+wire       spc1_dfq_byp_ff_en      = `SPARC_CORE1.sparc0.lsu.qctl2.dfq_byp_ff_en;
+wire       spc1_dfq_wr_en          = `SPARC_CORE1.sparc0.lsu.qctl2.dfq_wr_en;
+`endif
+reg        spc1_dfq_byp_ff_en_d1;
+reg        spc1_dfq_wr_en_d1;
+`endif
+
+
 
 
 //--------------------------------------------------------------------------------------
@@ -139,6 +152,19 @@ reg        spc0_dfq_wr_en_d1;
    reg 			  pcx0_atom_pq_d2;	// delayed by 2
    reg 			  pcx0_req_pq_d1;	// OR of request bits delayed by 1
    reg [5:0]		  pcx0_type_d1;	// packet type delayed by 1
+`endif
+
+
+`ifdef RTL_SPARC1
+   wire  [4:0] 		  spc1_pcx_req_pq 	= `SPARC_CORE1.spc0_pcx_req_pq[4:0];
+   wire        		  spc1_pcx_atom_pq	= `SPARC_CORE1.spc0_pcx_atom_pq;
+   wire  [`PCX_WIDTH-1:0] spc1_pcx_data_pa 	= `SPARC_CORE1.spc0_pcx_data_pa[`PCX_WIDTH-1:0];
+
+   reg 			  pcx1_vld_d1;	// valid pcx packet
+   reg 			  pcx1_atom_pq_d1;	// atomic bit delayed by 1
+   reg 			  pcx1_atom_pq_d2;	// delayed by 2
+   reg 			  pcx1_req_pq_d1;	// OR of request bits delayed by 1
+   reg [5:0]		  pcx1_type_d1;	// packet type delayed by 1
 `endif
 
 
@@ -278,6 +304,135 @@ reg        spc0_dfq_wr_en_d1;
 `endif
 
 
+`ifdef RTL_SPARC1
+   wire                  cpx_spc1_data_vld 	= `SPARC_CORE1.cpx_spc0_data_cx2[`CPX_WIDTH-1];
+   wire [`CPX_WIDTH-1:0] cpx_spc1_data_cx2	= `SPARC_CORE1.cpx_spc0_data_cx2[`CPX_WIDTH-1:0];
+
+   reg [`CPX_WIDTH-1:0] cpx_spc1_data_cx2_d1;	// packet delayed by 1
+   reg [`CPX_WIDTH-1:0] cpx_spc1_data_cx2_d2;	// packet delayed by 2
+   reg [127:0]		spc1_pcx_type_str;		// packet type in string format for debug.
+
+   reg [127:0]		cpx_spc1_type_str;		// in string format for debug
+
+   wire [3:0]  		cpx_spc1_type     	= cpx_spc1_data_vld ? cpx_spc1_data_cx2[`CPX_RQ_HI:`CPX_RQ_LO] :4'h0;
+   wire        		cpx_spc1_wyvld    	= cpx_spc1_data_cx2[`CPX_WYVLD] & cpx_spc1_data_vld;
+
+   wire cpx_spc1_st_ack = (cpx_spc1_type == `ST_ACK) | (cpx_spc1_type == `STRST_ACK);
+   wire cpx_spc1_evict  = (cpx_spc1_type == `EVICT_REQ);
+
+   reg cpx_spc1_ifill_wyvld;
+   reg cpx_spc1_dfill_wyvld;
+
+  wire cpx_spc1_st_ack_dc_inval_1c_tmp = (cpx_spc1_data_cx2[122:121] == 2'b00) ?  cpx_spc1_data_cx2[0]  :
+                                          (cpx_spc1_data_cx2[122:121] == 2'b01)   ?  cpx_spc1_data_cx2[32] :
+                                          (cpx_spc1_data_cx2[122:121] == 2'b10)   ?  cpx_spc1_data_cx2[56] :
+                                          					        cpx_spc1_data_cx2[88];
+
+  wire [2:0] cpx_spc1_st_ack_dc_inval_1c = {2'b00, cpx_spc1_st_ack & cpx_spc1_st_ack_dc_inval_1c_tmp};
+
+  wire cpx_spc1_st_ack_ic_inval_1c_tmp = cpx_spc1_data_cx2[122] ?  cpx_spc1_data_cx2[57] : cpx_spc1_data_cx2[1];
+  wire [2:0] cpx_spc1_st_ack_ic_inval_1c = {2'b00, (cpx_spc1_st_ack & cpx_spc1_st_ack_ic_inval_1c_tmp)};
+  wire [5:0] cpx_spc1_st_ack_icdc_inval_1c = {6{cpx_spc1_st_ack}} &
+					        {cpx_spc1_st_ack_ic_inval_1c, cpx_spc1_st_ack_dc_inval_1c};
+
+  wire [2:0] cpx_spc1_evict_dc_inval_1c   = cpx_spc1_data_cx2[0]  + cpx_spc1_data_cx2[32] +
+                                       cpx_spc1_data_cx2[56] + cpx_spc1_data_cx2[88];
+  wire [1:0] cpx_spc1_evict_ic_inval_1c   = cpx_spc1_data_cx2[1]  + cpx_spc1_data_cx2[57];
+
+
+  reg cpx_spc1_evict_d1;
+  always @(posedge clk)
+    cpx_spc1_evict_d1 <= cpx_spc1_evict;
+
+  wire cpx_spc1_b2b_evict = cpx_spc1_evict_d1 & cpx_spc1_evict;
+
+  wire [5:0] cpx_spc1_evict_icdc_inval_1c;
+  assign cpx_spc1_evict_icdc_inval_1c[4:0]={5{cpx_spc1_evict}} &
+                                              {cpx_spc1_evict_ic_inval_1c,cpx_spc1_evict_dc_inval_1c};
+
+  assign cpx_spc1_evict_icdc_inval_1c[5] = cpx_spc1_b2b_evict;
+
+  wire [5:0] cpx_spc1_st_ack_dc_inval_8c_tmp = (cpx_spc1_data_cx2[122:121] == 2'b00) ? (
+									     cpx_spc1_data_cx2[0] + cpx_spc1_data_cx2[4]   +
+									     cpx_spc1_data_cx2[8] + cpx_spc1_data_cx2[12]  +
+									     cpx_spc1_data_cx2[16] + cpx_spc1_data_cx2[20] +
+									     cpx_spc1_data_cx2[24] + cpx_spc1_data_cx2[28]
+                                                                           ) :
+                                  (cpx_spc1_data_cx2[122:121] == 2'b01) ? (
+									     cpx_spc1_data_cx2[32] + cpx_spc1_data_cx2[35] +
+									     cpx_spc1_data_cx2[38] + cpx_spc1_data_cx2[41] +
+									     cpx_spc1_data_cx2[44] + cpx_spc1_data_cx2[47] +
+									     cpx_spc1_data_cx2[50] + cpx_spc1_data_cx2[53]
+                                                                           ) :
+                                  (cpx_spc1_data_cx2[122:121] == 2'b10) ? (
+									     cpx_spc1_data_cx2[56] + cpx_spc1_data_cx2[60] +
+									     cpx_spc1_data_cx2[64] + cpx_spc1_data_cx2[68] +
+									     cpx_spc1_data_cx2[72] + cpx_spc1_data_cx2[76] +
+									     cpx_spc1_data_cx2[80] + cpx_spc1_data_cx2[84]
+                                                                           ) :
+									   ( cpx_spc1_data_cx2[88] + cpx_spc1_data_cx2[91] +
+									     cpx_spc1_data_cx2[94] + cpx_spc1_data_cx2[97] +
+									     cpx_spc1_data_cx2[100]+ cpx_spc1_data_cx2[103]+
+									     cpx_spc1_data_cx2[106]+ cpx_spc1_data_cx2[109]
+                                                                           ) ;
+
+  wire [5:0] cpx_spc1_st_ack_dc_inval_8c = {6{cpx_spc1_st_ack}} & cpx_spc1_st_ack_dc_inval_8c_tmp;
+
+  wire [5:0] cpx_spc1_st_ack_ic_inval_8c_tmp = ~cpx_spc1_data_cx2[122] ? (
+                                                                             cpx_spc1_data_cx2[1] + cpx_spc1_data_cx2[5]   +
+                                                                             cpx_spc1_data_cx2[9] + cpx_spc1_data_cx2[13]  +
+                                                                             cpx_spc1_data_cx2[17] + cpx_spc1_data_cx2[21] +
+                                                                             cpx_spc1_data_cx2[25] + cpx_spc1_data_cx2[29]
+                                                                           ) :
+                                                                           ( cpx_spc1_data_cx2[57] + cpx_spc1_data_cx2[61] +
+                                                                             cpx_spc1_data_cx2[65] + cpx_spc1_data_cx2[69] +
+                                                                             cpx_spc1_data_cx2[73] + cpx_spc1_data_cx2[77] +
+                                                                             cpx_spc1_data_cx2[81] + cpx_spc1_data_cx2[85]
+                                                                           ) ;
+
+  wire [5:0] cpx_spc1_st_ack_ic_inval_8c = {4{cpx_spc1_st_ack}} & cpx_spc1_st_ack_ic_inval_8c_tmp;
+
+  wire [5:0] cpx_spc1_evict_dc_inval_8c_tmp =
+									     cpx_spc1_data_cx2[0] + cpx_spc1_data_cx2[4] +
+									     cpx_spc1_data_cx2[8] + cpx_spc1_data_cx2[12] +
+									     cpx_spc1_data_cx2[16] + cpx_spc1_data_cx2[20] +
+									     cpx_spc1_data_cx2[24] + cpx_spc1_data_cx2[28] +
+									     cpx_spc1_data_cx2[32] + cpx_spc1_data_cx2[35] +
+									     cpx_spc1_data_cx2[38] + cpx_spc1_data_cx2[41] +
+									     cpx_spc1_data_cx2[44] + cpx_spc1_data_cx2[47] +
+									     cpx_spc1_data_cx2[50] + cpx_spc1_data_cx2[53] +
+									     cpx_spc1_data_cx2[56] + cpx_spc1_data_cx2[60] +
+									     cpx_spc1_data_cx2[64] + cpx_spc1_data_cx2[68] +
+									     cpx_spc1_data_cx2[72] + cpx_spc1_data_cx2[76] +
+									     cpx_spc1_data_cx2[80] + cpx_spc1_data_cx2[84] +
+									     cpx_spc1_data_cx2[88] + cpx_spc1_data_cx2[91] +
+									     cpx_spc1_data_cx2[94] + cpx_spc1_data_cx2[97] +
+									     cpx_spc1_data_cx2[100]+ cpx_spc1_data_cx2[103]+
+									     cpx_spc1_data_cx2[106]+ cpx_spc1_data_cx2[109];
+
+  wire [5:0] cpx_spc1_evict_dc_inval_8c = {6{cpx_spc1_evict}} & cpx_spc1_evict_dc_inval_8c_tmp;
+
+  wire [5:0] cpx_spc1_evict_ic_inval_8c_tmp =
+                                                                             cpx_spc1_data_cx2[1] + cpx_spc1_data_cx2[5] +
+                                                                             cpx_spc1_data_cx2[9] + cpx_spc1_data_cx2[13] +
+                                                                             cpx_spc1_data_cx2[17] + cpx_spc1_data_cx2[21] +
+                                                                             cpx_spc1_data_cx2[25] + cpx_spc1_data_cx2[29] +
+                                                                             cpx_spc1_data_cx2[57] + cpx_spc1_data_cx2[61] +
+                                                                             cpx_spc1_data_cx2[65] + cpx_spc1_data_cx2[69] +
+                                                                             cpx_spc1_data_cx2[73] + cpx_spc1_data_cx2[77] +
+                                                                             cpx_spc1_data_cx2[81] + cpx_spc1_data_cx2[85];
+
+  wire [5:0] cpx_spc1_evict_ic_inval_8c = {6{cpx_spc1_evict}} & cpx_spc1_evict_ic_inval_8c_tmp;
+
+  reg [3:0] 	blk_st_cnt1;			// counts the number of block  stores without an acknowledge in between
+  reg [3:0] 	ini_st_cnt1;			// counts the number of init   stores without an acknowledge in between
+  reg  		st_blkst_mixture1;		// a flag set upon detection of block store and normal store mixture.
+  reg  		st_inist_mixture1;		// a flag set upon detection of init  store and normal store mixture.
+  reg 		atomic_ret1;			// atomic  cpx to spc package
+  reg 		non_b2b_atomic_ret1;		// atomic  cpx to spc package did not return in back to back cycles
+`endif
+
+
 
 
 //----------------------------------------------------------------------------------------
@@ -341,6 +496,54 @@ begin
 `endif
 
 
+`ifdef RTL_SPARC1
+  pcx1_vld_d1 	<= spc1_pcx_data_pa[123];
+  pcx1_type_d1 	<= spc1_pcx_data_pa[122:118];
+  pcx1_req_pq_d1 	<= |spc1_pcx_req_pq;
+  pcx1_atom_pq_d1 	<= spc1_pcx_atom_pq;
+  pcx1_atom_pq_d2 	<= pcx1_atom_pq_d1;
+
+
+// Multiple block stores without an ACK in between
+//---------------------------------------------------
+  if((cpx_spc1_type == `ST_ACK) | ~rst_l)
+    blk_st_cnt1 <=  4'h0;
+  else if(pcx1_req_pq_d1 & (spc1_pcx_data_pa[122:118] == `STORE_RQ) & spc1_pcx_data_pa[109] & spc1_pcx_data_pa[110])
+    blk_st_cnt1 <= blk_st_cnt1 + 1'b1;
+
+// detect if a normal store came while this counter is not zero.
+//--------------------------------------------------------------
+  if(blk_st_cnt1 & (spc1_pcx_data_pa[122:118] == `STORE_RQ) & ~spc1_pcx_data_pa[109])
+    st_blkst_mixture1 <= 1'b1;
+  else if(blk_st_cnt1 == 4'h0)
+    st_blkst_mixture1 <= 1'b0;
+
+// Multiple init stores without an ACK in between
+//---------------------------------------------------
+  if((cpx_spc1_type == `ST_ACK) | ~rst_l)
+    ini_st_cnt1 <=  4'h0;
+  else if(pcx1_req_pq_d1 & (spc1_pcx_data_pa[122:118] == `STORE_RQ) & spc1_pcx_data_pa[109] & ~spc1_pcx_data_pa[110])
+    ini_st_cnt1 <= ini_st_cnt1 + 1'b1;
+
+// detect if a normal store came while this counter is not zero.
+//--------------------------------------------------------------
+  if(ini_st_cnt1 && (spc1_pcx_data_pa[122:118] == `STORE_RQ) & ~spc1_pcx_data_pa[109])
+    st_inist_mixture1 <= 1'b1;
+  else if(ini_st_cnt1 == 4'h0)
+    st_inist_mixture1 <= 1'b0;
+
+  if(~rst_l)
+    cpx_spc1_ifill_wyvld <= 1'b0;
+  else
+    cpx_spc1_ifill_wyvld <= ((cpx_spc1_type == `IFILL_RET) & cpx_spc1_wyvld);
+
+  if(~rst_l)
+    cpx_spc1_dfill_wyvld <= 1'b0;
+  else
+    cpx_spc1_dfill_wyvld <= ((cpx_spc1_type == `LOAD_RET) & cpx_spc1_wyvld);
+`endif
+
+
 
 
 end
@@ -354,6 +557,15 @@ begin
   else if(rst_l & pcx0_req_pq_d1)
      get_pcx(	spc0_pcx_type_str, spc0_pcx_data_pa, pcx0_type_d1,
 		pcx0_atom_pq_d1, pcx0_atom_pq_d2, 3'd0, pcx0_req_pq_d1);
+`endif
+
+
+`ifdef RTL_SPARC1
+  if (rst_l & (^spc1_pcx_req_pq === 1'bx))
+     finish_test("spc", "pcx_req_pq has X-s", 1);
+  else if(rst_l & pcx1_req_pq_d1)
+     get_pcx(	spc1_pcx_type_str, spc1_pcx_data_pa, pcx1_type_d1,
+		pcx1_atom_pq_d1, pcx1_atom_pq_d2, 3'd0, pcx1_req_pq_d1);
 `endif
 
 
@@ -389,6 +601,28 @@ begin
 `endif
 
 
+`ifdef RTL_SPARC1
+       if(cpx_spc1_data_vld & (cpx_spc1_type == `LOAD_RET) & cpx_spc1_data_cx2[129])
+       begin
+           atomic_ret1 <= 1'b1;
+           if(tso_mon_msg) $display("tso_mon: atomic_ret1 = 1");
+       end
+       else if(cpx_spc1_data_vld & (cpx_spc1_type == `ST_ACK) & cpx_spc1_data_cx2[129])
+       begin
+           atomic_ret1 <= 1'b0;
+           if(tso_mon_msg) $display("tso_mon: atomic_ret1 = 0");
+       end
+
+       if(atomic_ret1 & cpx_spc1_data_vld & ~(cpx_spc1_type == `ST_ACK))
+       begin
+           non_b2b_atomic_ret1 <= 1'b1;
+           if(tso_mon_msg) $display("tso_mon: non_b2b_atomic_ret0");
+       end
+       else
+          non_b2b_atomic_ret1 <= 1'b0;
+`endif
+
+
 
 end
 
@@ -402,6 +636,14 @@ begin
     get_cpx_spc(cpx_spc0_type_str, cpx_spc0_type);
   if(tso_mon_msg)
     $display("%0d:Info cpx-to-spc%d packet TYPE= %s data= %x", $time, 0, cpx_spc0_type_str, cpx_spc0_data_cx2[127:0]);
+`endif
+
+
+`ifdef RTL_SPARC1
+  if(cpx_spc1_data_vld)
+    get_cpx_spc(cpx_spc1_type_str, cpx_spc1_type);
+  if(tso_mon_msg)
+    $display("%0d:Info cpx-to-spc%d packet TYPE= %s data= %x", $time, 1, cpx_spc1_type_str, cpx_spc1_data_cx2[127:0]);
 `endif
 
 
@@ -946,6 +1188,535 @@ end
 
 
 
+`ifdef RTL_SPARC1
+`ifndef RTL_SPU
+wire   C1T0_stb_ne    = |`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   C1T1_stb_ne    = |`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   C1T2_stb_ne    = |`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   C1T3_stb_ne    = |`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl3.stb_state_vld[7:0];
+
+wire   C1T0_stb_nced  = |(   `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl0.stb_state_vld[7:0] &
+                ~`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl0.stb_state_ced[7:0]);
+wire   C1T1_stb_nced  = |(   `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl1.stb_state_vld[7:0] &
+                ~`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl1.stb_state_ced[7:0]);
+wire   C1T2_stb_nced  = |(   `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl2.stb_state_vld[7:0] &
+                ~`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl2.stb_state_ced[7:0]);
+wire   C1T3_stb_nced  = |(   `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl3.stb_state_vld[7:0] &
+                ~`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl3.stb_state_ced[7:0]);
+
+wire   spc1_lsu_ifill_pkt_vld   = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.lsu_ifill_pkt_vld;
+wire   spc1_dfq_rd_advance          = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_rd_advance;
+wire   spc1_dfq_int_type        = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_int_type;
+
+wire   spc1_ifu_lsu_inv_clear   = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.ifu_lsu_inv_clear;
+
+wire        spc1_dva_svld_e         = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dva_svld_e;
+wire        spc1_dva_rvld_e     = `SPARC_CORE1.sparc0.lsu.lsu.dva.rd_en;
+wire [`L1D_ADDRESS_HI:4] spc1_dva_rd_addr_e      = `SPARC_CORE1.sparc0.lsu.lsu.dva.rd_adr1[`L1D_ADDRESS_HI-4:0];
+wire [`L1D_ADDRESS_HI-6:0]  spc1_dva_snp_addr_e     = `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dva_snp_addr_e[`L1D_ADDRESS_HI-6:0];
+
+wire [4:0]  spc1_stb_data_rd_ptr    = `SPARC_CORE1.sparc0.lsu.lsu.stb_data_rd_ptr[4:0];
+wire [4:0]  spc1_stb_data_wr_ptr    = `SPARC_CORE1.sparc0.lsu.lsu.stb_data_wr_ptr[4:0];
+wire        spc1_stb_data_wptr_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_data_wptr_vld;
+wire        spc1_stb_data_rptr_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_data_rptr_vld;
+wire        spc1_stbrwctl_flush_pipe_w = `SPARC_CORE1.sparc0.lsu.lsu.stb_rwctl.lsu_stbrwctl_flush_pipe_w;
+wire        spc1_lsu_st_pcx_rq_pick     = |`SPARC_CORE1.sparc0.lsu.lsu.stb_rwctl.lsu_st_pcx_rq_pick[3:0];
+
+wire [`L1D_WAY_ARRAY_MASK]  spc1_lsu_rd_dtag_parity_g = `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_rd_dtag_parity_g[`L1D_WAY_ARRAY_MASK];
+wire [`L1D_WAY_ARRAY_MASK]  spc1_dva_vld_g       = `SPARC_CORE1.sparc0.lsu.lsu.dctl.dva_vld_g[`L1D_WAY_ARRAY_MASK];
+
+wire [3:0]  spc1_lsu_dc_tag_pe_g_unmasked    = spc1_lsu_rd_dtag_parity_g[3:0] & spc1_dva_vld_g[3:0];
+wire        spc1_lsu_dc_tag_pe_g_unmasked_or = |spc1_lsu_dc_tag_pe_g_unmasked[3:0];
+
+wire   C1T0_stb_full  = &`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   C1T1_stb_full  = &`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   C1T2_stb_full  = &`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   C1T3_stb_full  = &`SPARC_CORE1.sparc0.lsu.lsu.stb_ctl3.stb_state_vld[7:0];
+
+wire   [7:0] C1T0_stb_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   [7:0] C1T1_stb_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   [7:0] C1T2_stb_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   [7:0] C1T3_stb_vld  = `SPARC_CORE1.sparc0.lsu.lsu.stb_ctl3.stb_state_vld[7:0];
+`else
+wire   C1T0_stb_ne    = |`SPARC_CORE1.sparc0.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   C1T1_stb_ne    = |`SPARC_CORE1.sparc0.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   C1T2_stb_ne    = |`SPARC_CORE1.sparc0.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   C1T3_stb_ne    = |`SPARC_CORE1.sparc0.lsu.stb_ctl3.stb_state_vld[7:0];
+
+wire   C1T0_stb_nced  = |(	 `SPARC_CORE1.sparc0.lsu.stb_ctl0.stb_state_vld[7:0] &
+				~`SPARC_CORE1.sparc0.lsu.stb_ctl0.stb_state_ced[7:0]);
+wire   C1T1_stb_nced  = |(	 `SPARC_CORE1.sparc0.lsu.stb_ctl1.stb_state_vld[7:0] &
+				~`SPARC_CORE1.sparc0.lsu.stb_ctl1.stb_state_ced[7:0]);
+wire   C1T2_stb_nced  = |(	 `SPARC_CORE1.sparc0.lsu.stb_ctl2.stb_state_vld[7:0] &
+				~`SPARC_CORE1.sparc0.lsu.stb_ctl2.stb_state_ced[7:0]);
+wire   C1T3_stb_nced  = |(	 `SPARC_CORE1.sparc0.lsu.stb_ctl3.stb_state_vld[7:0] &
+				~`SPARC_CORE1.sparc0.lsu.stb_ctl3.stb_state_ced[7:0]);
+
+wire   spc1_lsu_ifill_pkt_vld	= `SPARC_CORE1.sparc0.lsu.qctl2.lsu_ifill_pkt_vld;
+wire   spc1_dfq_rd_advance  		= `SPARC_CORE1.sparc0.lsu.qctl2.dfq_rd_advance;
+wire   spc1_dfq_int_type  		= `SPARC_CORE1.sparc0.lsu.qctl2.dfq_int_type;
+
+wire   spc1_ifu_lsu_inv_clear	= `SPARC_CORE1.sparc0.lsu.qctl2.ifu_lsu_inv_clear;
+
+wire 	    spc1_dva_svld_e 	 	= `SPARC_CORE1.sparc0.lsu.qctl2.dva_svld_e;
+wire 	    spc1_dva_rvld_e	 	= `SPARC_CORE1.sparc0.lsu.dva.rd_en;
+wire [`L1D_ADDRESS_HI:4] spc1_dva_rd_addr_e  	= `SPARC_CORE1.sparc0.lsu.dva.rd_adr1[`L1D_ADDRESS_HI-4:0];
+wire [4:0]  spc1_dva_snp_addr_e 	= `SPARC_CORE1.sparc0.lsu.qctl2.dva_snp_addr_e[4:0];
+
+wire [4:0]  spc1_stb_data_rd_ptr   	= `SPARC_CORE1.sparc0.lsu.stb_data_rd_ptr[4:0];
+wire [4:0]  spc1_stb_data_wr_ptr   	= `SPARC_CORE1.sparc0.lsu.stb_data_wr_ptr[4:0];
+wire        spc1_stb_data_wptr_vld 	= `SPARC_CORE1.sparc0.lsu.stb_data_wptr_vld;
+wire        spc1_stb_data_rptr_vld 	= `SPARC_CORE1.sparc0.lsu.stb_data_rptr_vld;
+wire        spc1_stbrwctl_flush_pipe_w = `SPARC_CORE1.sparc0.lsu.stb_rwctl.lsu_stbrwctl_flush_pipe_w;
+wire        spc1_lsu_st_pcx_rq_pick 	= |`SPARC_CORE1.sparc0.lsu.stb_rwctl.lsu_st_pcx_rq_pick[3:0];
+
+wire [3:0]  spc1_lsu_rd_dtag_parity_g = `SPARC_CORE1.sparc0.lsu.dctl.lsu_rd_dtag_parity_g[3:0];
+wire [3:0]  spc1_dva_vld_g		 = `SPARC_CORE1.sparc0.lsu.dctl.dva_vld_g[3:0];
+
+wire [3:0]  spc1_lsu_dc_tag_pe_g_unmasked    = spc1_lsu_rd_dtag_parity_g[3:0] & spc1_dva_vld_g[3:0];
+wire        spc1_lsu_dc_tag_pe_g_unmasked_or = |spc1_lsu_dc_tag_pe_g_unmasked[3:0];
+
+wire   C1T0_stb_full  = &`SPARC_CORE1.sparc0.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   C1T1_stb_full  = &`SPARC_CORE1.sparc0.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   C1T2_stb_full  = &`SPARC_CORE1.sparc0.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   C1T3_stb_full  = &`SPARC_CORE1.sparc0.lsu.stb_ctl3.stb_state_vld[7:0];
+
+wire   [7:0] C1T0_stb_vld  = `SPARC_CORE1.sparc0.lsu.stb_ctl0.stb_state_vld[7:0];
+wire   [7:0] C1T1_stb_vld  = `SPARC_CORE1.sparc0.lsu.stb_ctl1.stb_state_vld[7:0];
+wire   [7:0] C1T2_stb_vld  = `SPARC_CORE1.sparc0.lsu.stb_ctl2.stb_state_vld[7:0];
+wire   [7:0] C1T3_stb_vld  = `SPARC_CORE1.sparc0.lsu.stb_ctl3.stb_state_vld[7:0];
+`endif
+
+wire   [4:0] C1T0_stb_vld_sum  =  C1T0_stb_vld[0] +  C1T0_stb_vld[1] +  C1T0_stb_vld[2] +  C1T0_stb_vld[3] +
+                                     C1T0_stb_vld[4] +  C1T0_stb_vld[5] +  C1T0_stb_vld[6] +  C1T0_stb_vld[7] ;
+wire   [4:0] C1T1_stb_vld_sum  =  C1T1_stb_vld[0] +  C1T1_stb_vld[1] +  C1T1_stb_vld[2] +  C1T1_stb_vld[3] +
+                                     C1T1_stb_vld[4] +  C1T1_stb_vld[5] +  C1T1_stb_vld[6] +  C1T1_stb_vld[7] ;
+wire   [4:0] C1T2_stb_vld_sum  =  C1T2_stb_vld[0] +  C1T2_stb_vld[1] +  C1T2_stb_vld[2] +  C1T2_stb_vld[3] +
+                                     C1T2_stb_vld[4] +  C1T2_stb_vld[5] +  C1T2_stb_vld[6] +  C1T2_stb_vld[7] ;
+wire   [4:0] C1T3_stb_vld_sum  =  C1T3_stb_vld[0] +  C1T3_stb_vld[1] +  C1T3_stb_vld[2] +  C1T3_stb_vld[3] +
+                                     C1T3_stb_vld[4] +  C1T3_stb_vld[5] +  C1T3_stb_vld[6] +  C1T3_stb_vld[7] ;
+
+reg [4:0] C1T0_stb_vld_sum_d1;
+reg [4:0] C1T1_stb_vld_sum_d1;
+reg [4:0] C1T2_stb_vld_sum_d1;
+reg [4:0] C1T3_stb_vld_sum_d1;
+
+`ifndef RTL_SPU
+wire   C1T0_st_ack  = &`SPARC_CORE1.sparc0.lsu.lsu.cpx_st_ack_tid0;
+wire   C1T1_st_ack  = &`SPARC_CORE1.sparc0.lsu.lsu.cpx_st_ack_tid1;
+wire   C1T2_st_ack  = &`SPARC_CORE1.sparc0.lsu.lsu.cpx_st_ack_tid2;
+wire   C1T3_st_ack  = &`SPARC_CORE1.sparc0.lsu.lsu.cpx_st_ack_tid3;
+
+wire   C1T0_defr_trp_en = &`SPARC_CORE1.sparc0.lsu.lsu.excpctl.st_defr_trp_en0;
+wire   C1T1_defr_trp_en = &`SPARC_CORE1.sparc0.lsu.lsu.excpctl.st_defr_trp_en1;
+wire   C1T2_defr_trp_en = &`SPARC_CORE1.sparc0.lsu.lsu.excpctl.st_defr_trp_en2;
+wire   C1T3_defr_trp_en = &`SPARC_CORE1.sparc0.lsu.lsu.excpctl.st_defr_trp_en3;
+`else
+wire   C1T0_st_ack  = &`SPARC_CORE1.sparc0.lsu.cpx_st_ack_tid0;
+wire   C1T1_st_ack  = &`SPARC_CORE1.sparc0.lsu.cpx_st_ack_tid1;
+wire   C1T2_st_ack  = &`SPARC_CORE1.sparc0.lsu.cpx_st_ack_tid2;
+wire   C1T3_st_ack  = &`SPARC_CORE1.sparc0.lsu.cpx_st_ack_tid3;
+
+wire   C1T0_defr_trp_en	= &`SPARC_CORE1.sparc0.lsu.excpctl.st_defr_trp_en0;
+wire   C1T1_defr_trp_en	= &`SPARC_CORE1.sparc0.lsu.excpctl.st_defr_trp_en1;
+wire   C1T2_defr_trp_en	= &`SPARC_CORE1.sparc0.lsu.excpctl.st_defr_trp_en2;
+wire   C1T3_defr_trp_en	= &`SPARC_CORE1.sparc0.lsu.excpctl.st_defr_trp_en3;
+`endif
+
+reg C1T0_defr_trp_en_d1;
+reg C1T1_defr_trp_en_d1;
+reg C1T2_defr_trp_en_d1;
+reg C1T3_defr_trp_en_d1;
+
+integer C1T0_stb_drain_cnt;
+integer C1T1_stb_drain_cnt;
+integer C1T2_stb_drain_cnt;
+integer C1T3_stb_drain_cnt;
+
+// Hits in the store buffer
+//-------------------------
+`ifndef RTL_SPU
+wire       spc1_inst_vld_w      = `SPARC_CORE1.sparc0.ifu.ifu.fcl.inst_vld_w;
+wire [1:0] spc1_sas_thrid_w     = `SPARC_CORE1.sparc0.ifu.ifu.fcl.sas_thrid_w[1:0];
+`else
+wire       spc1_inst_vld_w		= `SPARC_CORE1.sparc0.ifu.fcl.inst_vld_w;
+wire [1:0] spc1_sas_thrid_w		= `SPARC_CORE1.sparc0.ifu.fcl.sas_thrid_w[1:0];
+`endif
+
+wire C1_st_ack_w = (spc1_sas_thrid_w == 2'b00) & C1T0_st_ack |
+                      (spc1_sas_thrid_w == 2'b01) & C1T1_st_ack |
+                      (spc1_sas_thrid_w == 2'b10) & C1T2_st_ack |
+                      (spc1_sas_thrid_w == 2'b11) & C1T3_st_ack;
+
+`ifndef RTL_SPU
+wire [7:0] spc1_stb_ld_full_raw = `SPARC_CORE1.sparc0.lsu.lsu.stb_ld_full_raw[7:0];
+wire [7:0] spc1_stb_ld_partial_raw  = `SPARC_CORE1.sparc0.lsu.lsu.stb_ld_partial_raw[7:0];
+wire       spc1_stb_cam_mhit        = `SPARC_CORE1.sparc0.lsu.lsu.stb_cam_mhit;
+wire       spc1_stb_cam_hit     = `SPARC_CORE1.sparc0.lsu.lsu.stb_cam_hit;
+wire [`L1D_WAY_ARRAY_MASK] spc1_lsu_way_hit     = `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_way_hit[`L1D_WAY_ARRAY_MASK];
+wire       spc1_lsu_ifu_ldst_miss_w = `SPARC_CORE1.sparc0.lsu.lsu.lsu_ifu_ldst_miss_w;
+wire       spc1_ld_inst_vld_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.ld_inst_vld_g;
+wire       spc1_ldst_dbl_g      = `SPARC_CORE1.sparc0.lsu.lsu.dctl.ldst_dbl_g;
+wire       spc1_quad_asi_g      = `SPARC_CORE1.sparc0.lsu.lsu.dctl.quad_asi_g;
+wire [1:0] spc1_ldst_sz_g       = `SPARC_CORE1.sparc0.lsu.lsu.dctl.ldst_sz_g;
+wire       spc1_lsu_alt_space_g = `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_alt_space_g;
+
+wire       spc1_mbar_inst0_g        = `SPARC_CORE1.sparc0.lsu.lsu.dctl.mbar_inst0_g;
+wire       spc1_mbar_inst1_g        = `SPARC_CORE1.sparc0.lsu.lsu.dctl.mbar_inst1_g;
+wire       spc1_mbar_inst2_g        = `SPARC_CORE1.sparc0.lsu.lsu.dctl.mbar_inst2_g;
+wire       spc1_mbar_inst3_g        = `SPARC_CORE1.sparc0.lsu.lsu.dctl.mbar_inst3_g;
+
+wire       spc1_flush_inst0_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.flush_inst0_g;
+wire       spc1_flush_inst1_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.flush_inst1_g;
+wire       spc1_flush_inst2_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.flush_inst2_g;
+wire       spc1_flush_inst3_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.flush_inst3_g;
+
+wire       spc1_intrpt_disp_asi0_g  = `SPARC_CORE1.sparc0.lsu.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b00);
+wire       spc1_intrpt_disp_asi1_g  = `SPARC_CORE1.sparc0.lsu.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b01);
+wire       spc1_intrpt_disp_asi2_g  = `SPARC_CORE1.sparc0.lsu.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b10);
+wire       spc1_intrpt_disp_asi3_g  = `SPARC_CORE1.sparc0.lsu.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b11);
+
+wire       spc1_st_inst_vld_g   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.st_inst_vld_g;
+wire       spc1_non_altspace_ldst_g = `SPARC_CORE1.sparc0.lsu.lsu.dctl.non_altspace_ldst_g;
+
+wire       spc1_dctl_flush_pipe_w   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.dctl_flush_pipe_w;
+
+wire [3:0] spc1_no_spc_rmo_st   = `SPARC_CORE1.sparc0.lsu.lsu.dctl.no_spc_rmo_st[3:0];
+
+
+wire       spc1_ldst_fp_e       = `SPARC_CORE1.sparc0.lsu.lsu.ifu_lsu_ldst_fp_e;
+wire [2:0] spc1_stb_rdptr       = `SPARC_CORE1.sparc0.lsu.lsu.stb_rwctl.stb_rdptr_l;
+
+wire       spc1_ld_l2cache_req  = `SPARC_CORE1.sparc0.lsu.lsu.qctl1.ld3_l2cache_rq |
+                      `SPARC_CORE1.sparc0.lsu.lsu.qctl1.ld2_l2cache_rq |
+                              `SPARC_CORE1.sparc0.lsu.lsu.qctl1.ld1_l2cache_rq |
+                      `SPARC_CORE1.sparc0.lsu.lsu.qctl1.ld0_l2cache_rq;
+
+wire [3:0] spc1_dcache_enable   = {`SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_ctl_reg0[1],
+                                           `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_ctl_reg1[1],
+                       `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_ctl_reg2[1],
+                       `SPARC_CORE1.sparc0.lsu.lsu.dctl.lsu_ctl_reg3[1]};
+
+wire [3:0] spc1_icache_enable   = `SPARC_CORE1.sparc0.lsu.lsu.lsu_ifu_icache_en[3:0];
+
+wire spc1_dc_direct_map         = `SPARC_CORE1.sparc0.lsu.lsu.dc_direct_map;
+wire spc1_lsu_ifu_direct_map_l1 = `SPARC_CORE1.sparc0.lsu.lsu.lsu_ifu_direct_map_l1;
+`else
+wire [7:0] spc1_stb_ld_full_raw	= `SPARC_CORE1.sparc0.lsu.stb_ld_full_raw[7:0];
+wire [7:0] spc1_stb_ld_partial_raw	= `SPARC_CORE1.sparc0.lsu.stb_ld_partial_raw[7:0];
+wire       spc1_stb_cam_mhit		= `SPARC_CORE1.sparc0.lsu.stb_cam_mhit;
+wire       spc1_stb_cam_hit		= `SPARC_CORE1.sparc0.lsu.stb_cam_hit;
+wire [`L1D_WAY_ARRAY_MASK] spc1_lsu_way_hit		= `SPARC_CORE1.sparc0.lsu.dctl.lsu_way_hit[`L1D_WAY_ARRAY_MASK];
+wire       spc1_lsu_ifu_ldst_miss_w	= `SPARC_CORE1.sparc0.lsu.lsu_ifu_ldst_miss_w;
+wire       spc1_ld_inst_vld_g	= `SPARC_CORE1.sparc0.lsu.dctl.ld_inst_vld_g;
+wire       spc1_ldst_dbl_g		= `SPARC_CORE1.sparc0.lsu.dctl.ldst_dbl_g;
+wire       spc1_quad_asi_g		= `SPARC_CORE1.sparc0.lsu.dctl.quad_asi_g;
+wire [1:0] spc1_ldst_sz_g		= `SPARC_CORE1.sparc0.lsu.dctl.ldst_sz_g;
+wire       spc1_lsu_alt_space_g	= `SPARC_CORE1.sparc0.lsu.dctl.lsu_alt_space_g;
+
+wire       spc1_mbar_inst0_g		= `SPARC_CORE1.sparc0.lsu.dctl.mbar_inst0_g;
+wire       spc1_mbar_inst1_g		= `SPARC_CORE1.sparc0.lsu.dctl.mbar_inst1_g;
+wire       spc1_mbar_inst2_g		= `SPARC_CORE1.sparc0.lsu.dctl.mbar_inst2_g;
+wire       spc1_mbar_inst3_g		= `SPARC_CORE1.sparc0.lsu.dctl.mbar_inst3_g;
+
+wire       spc1_flush_inst0_g	= `SPARC_CORE1.sparc0.lsu.dctl.flush_inst0_g;
+wire       spc1_flush_inst1_g	= `SPARC_CORE1.sparc0.lsu.dctl.flush_inst1_g;
+wire       spc1_flush_inst2_g	= `SPARC_CORE1.sparc0.lsu.dctl.flush_inst2_g;
+wire       spc1_flush_inst3_g	= `SPARC_CORE1.sparc0.lsu.dctl.flush_inst3_g;
+
+wire       spc1_intrpt_disp_asi0_g	= `SPARC_CORE1.sparc0.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b00);
+wire       spc1_intrpt_disp_asi1_g	= `SPARC_CORE1.sparc0.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b01);
+wire       spc1_intrpt_disp_asi2_g	= `SPARC_CORE1.sparc0.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b10);
+wire       spc1_intrpt_disp_asi3_g	= `SPARC_CORE1.sparc0.lsu.dctl.intrpt_disp_asi_g & (spc1_sas_thrid_w == 2'b11);
+
+wire       spc1_st_inst_vld_g	= `SPARC_CORE1.sparc0.lsu.dctl.st_inst_vld_g;
+wire       spc1_non_altspace_ldst_g	= `SPARC_CORE1.sparc0.lsu.dctl.non_altspace_ldst_g;
+
+wire       spc1_dctl_flush_pipe_w	= `SPARC_CORE1.sparc0.lsu.dctl.dctl_flush_pipe_w;
+
+wire [3:0] spc1_no_spc_rmo_st	= `SPARC_CORE1.sparc0.lsu.dctl.no_spc_rmo_st[3:0];
+
+
+wire       spc1_ldst_fp_e		= `SPARC_CORE1.sparc0.lsu.ifu_lsu_ldst_fp_e;
+wire [2:0] spc1_stb_rdptr		= `SPARC_CORE1.sparc0.lsu.stb_rwctl.stb_rdptr_l;
+
+wire 	   spc1_ld_l2cache_req 	= `SPARC_CORE1.sparc0.lsu.qctl1.ld3_l2cache_rq |
+					  `SPARC_CORE1.sparc0.lsu.qctl1.ld2_l2cache_rq |
+                 			  `SPARC_CORE1.sparc0.lsu.qctl1.ld1_l2cache_rq |
+					  `SPARC_CORE1.sparc0.lsu.qctl1.ld0_l2cache_rq;
+
+wire [3:0] spc1_dcache_enable	= {`SPARC_CORE1.sparc0.lsu.dctl.lsu_ctl_reg0[1],
+                                    	   `SPARC_CORE1.sparc0.lsu.dctl.lsu_ctl_reg1[1],
+					   `SPARC_CORE1.sparc0.lsu.dctl.lsu_ctl_reg2[1],
+					   `SPARC_CORE1.sparc0.lsu.dctl.lsu_ctl_reg3[1]};
+
+wire [3:0] spc1_icache_enable	= `SPARC_CORE1.sparc0.lsu.lsu_ifu_icache_en[3:0];
+
+wire spc1_dc_direct_map 		= `SPARC_CORE1.sparc0.lsu.dc_direct_map;
+wire spc1_lsu_ifu_direct_map_l1	= `SPARC_CORE1.sparc0.lsu.lsu_ifu_direct_map_l1;
+`endif
+
+always @(spc1_dcache_enable)
+    $display("%0d tso_mon: spc1_dcache_enable changed to %x", $time, spc1_dcache_enable);
+
+always @(spc1_icache_enable)
+    $display("%0d tso_mon: spc1_icache_enable changed to %x", $time, spc1_icache_enable);
+
+always @(spc1_dc_direct_map)
+    $display("%0d tso_mon: spc1_dc_direct_map changed to %x", $time, spc1_dc_direct_map);
+
+always @(spc1_lsu_ifu_direct_map_l1)
+   $display("%0d tso_mon: spc1_lsu_ifu_direct_map_l1 changed to %x", $time, spc1_lsu_ifu_direct_map_l1);
+
+reg 		spc1_dva_svld_e_d1;
+reg 		spc1_dva_rvld_e_d1;
+reg [`L1D_ADDRESS_HI:4] 	spc1_dva_rd_addr_e_d1;
+reg [4:0]  	spc1_dva_snp_addr_e_d1;
+
+reg   		spc1_lsu_snp_after_rd;
+reg   		spc1_lsu_rd_after_snp;
+
+reg 	   	spc1_ldst_fp_m, spc1_ldst_fp_g;
+
+integer 	spc1_multiple_hits;
+
+reg spc1_skid_d1, spc1_skid_d2, spc1_skid_d3;
+initial begin
+  spc1_skid_d1 = 0;
+  spc1_skid_d2 = 0;
+  spc1_skid_d3 = 0;
+end
+
+always @(posedge clk)
+begin
+
+  spc1_skid_d1 <= (~spc1_ifu_lsu_inv_clear & spc1_dfq_rd_advance & spc1_dfq_int_type);
+  spc1_skid_d2 <= spc1_skid_d1 & ~spc1_ifu_lsu_inv_clear;
+  spc1_skid_d3 <= spc1_skid_d2 & ~spc1_ifu_lsu_inv_clear;
+
+// The full tracking of this condition is complicated since after the interrupt is advanced
+// there may be more invalidations to the IFQ.
+// All we care about is that the invalidations BEFORE the interrupt are finished.
+// I provided a command line argument to disable this check.
+  if(spc1_skid_d3 & enable_ifu_lsu_inv_clear)
+     finish_test("spc", "tso_mon:   spc1_ifu_lsu_inv_clear should have been clear by now", 1);
+
+  spc1_dva_svld_e_d1 	<= spc1_dva_svld_e;
+  spc1_dva_rvld_e_d1 	<= spc1_dva_rvld_e;
+  spc1_dva_rd_addr_e_d1 	<= spc1_dva_rd_addr_e;
+  spc1_dva_snp_addr_e_d1 	<= spc1_dva_snp_addr_e;
+
+  if(spc1_dva_svld_e_d1 & spc1_dva_rvld_e & (spc1_dva_rd_addr_e_d1[`L1D_ADDRESS_HI:6] == spc1_dva_snp_addr_e[4:0]))
+    spc1_lsu_rd_after_snp <= 1'b1;
+  else
+    spc1_lsu_rd_after_snp <= 1'b0;
+
+  if(spc1_dva_svld_e & spc1_dva_rvld_e_d1 & (spc1_dva_rd_addr_e[`L1D_ADDRESS_HI:6] == spc1_dva_snp_addr_e_d1[4:0]))
+    spc1_lsu_snp_after_rd <= 1'b1;
+  else
+    spc1_lsu_snp_after_rd <= 1'b0;
+
+  spc1_ldst_fp_m <= spc1_ldst_fp_e;
+  spc1_ldst_fp_g <= spc1_ldst_fp_m;
+
+  if(spc1_stb_data_rptr_vld & spc1_stb_data_wptr_vld & ~spc1_stbrwctl_flush_pipe_w &
+     (spc1_stb_data_rd_ptr == spc1_stb_data_wr_ptr) & spc1_lsu_st_pcx_rq_pick)
+  begin
+    finish_test("spc", "tso_mon: LSU stb data write and read in the same cycle", 1);
+  end
+
+   spc1_multiple_hits = (spc1_lsu_way_hit[3] + spc1_lsu_way_hit[2] + spc1_lsu_way_hit[1] + spc1_lsu_way_hit[0]);
+   if(!spc1_lsu_ifu_ldst_miss_w && (spc1_multiple_hits >1) && spc1_inst_vld_w && !spc1_dctl_flush_pipe_w && !spc1_lsu_dc_tag_pe_g_unmasked_or)
+     finish_test("spc", "tso_mon: LSU multiple hits ", 1);
+end
+
+wire spc1_ld_dbl      = spc1_ld_inst_vld_g &  spc1_ldst_dbl_g &  ~spc1_quad_asi_g;
+wire spc1_ld_quad     = spc1_ld_inst_vld_g &  spc1_ldst_dbl_g &  spc1_quad_asi_g;
+wire spc1_ld_other    = spc1_ld_inst_vld_g & ~spc1_ldst_dbl_g;
+
+wire spc1_ld_dbl_fp   = spc1_ld_dbl        &  spc1_ldst_fp_g;
+wire spc1_ld_other_fp = spc1_ld_other      &  spc1_ldst_fp_g;
+
+wire spc1_ld_dbl_int  = spc1_ld_dbl        & ~spc1_ldst_fp_g;
+wire spc1_ld_quad_int = spc1_ld_quad       & ~spc1_ldst_fp_g;
+wire spc1_ld_other_int= spc1_ld_other      & ~spc1_ldst_fp_g;
+
+wire spc1_ld_bypassok_hit = |spc1_stb_ld_full_raw[7:0] & ~spc1_stb_cam_mhit;
+wire spc1_ld_partial_hit  = |spc1_stb_ld_partial_raw[7:0] & ~spc1_stb_cam_mhit;
+wire spc1_ld_multiple_hit =  spc1_stb_cam_mhit;
+
+wire spc1_any_lsu_way_hit = |spc1_lsu_way_hit;
+
+wire [7:0] spc1_stb_rdptr_decoded = 	(spc1_stb_rdptr ==3'b000) ? 8'b00000001 :
+                               		(spc1_stb_rdptr ==3'b001) ? 8'b00000010 :
+                               		(spc1_stb_rdptr ==3'b010) ? 8'b00000100 :
+                              		(spc1_stb_rdptr ==3'b011) ? 8'b00001000 :
+                              		(spc1_stb_rdptr ==3'b100) ? 8'b00010000 :
+                              		(spc1_stb_rdptr ==3'b101) ? 8'b00100000 :
+                             		(spc1_stb_rdptr ==3'b110) ? 8'b01000000 :
+                              		(spc1_stb_rdptr ==3'b111) ? 8'b10000000 : 8'h00;
+
+
+wire spc1_stb_top_hit = |(spc1_stb_rdptr_decoded & (spc1_stb_ld_full_raw | spc1_stb_ld_partial_raw));
+
+//---------------------------------------------------------------------
+// ld_type[4:0] hit_type[2:0], cache_hit, hit_top
+// this is passed to the coverage monitor.
+//---------------------------------------------------------------------
+wire [10:0] spc1_stb_ld_hit_info =
+	{spc1_ld_dbl_fp,        spc1_ld_other_fp,
+	 spc1_ld_dbl_int, 	   spc1_ld_quad_int,    spc1_ld_other_int,
+	 spc1_ld_bypassok_hit,  spc1_ld_partial_hit, spc1_ld_multiple_hit,
+	 spc1_any_lsu_way_hit,
+	 spc1_stb_top_hit, C1_st_ack_w};
+
+reg spc1_mbar0_active;
+reg spc1_mbar1_active;
+reg spc1_mbar2_active;
+reg spc1_mbar3_active;
+
+reg spc1_flush0_active;
+reg spc1_flush1_active;
+reg spc1_flush2_active;
+reg spc1_flush3_active;
+
+reg spc1_intr0_active;
+reg spc1_intr1_active;
+reg spc1_intr2_active;
+reg spc1_intr3_active;
+
+always @(negedge clk)
+begin
+  if(~rst_l)
+  begin
+     spc1_mbar0_active <= 1'b0;
+     spc1_mbar1_active <= 1'b0;
+     spc1_mbar2_active <= 1'b0;
+     spc1_mbar3_active <= 1'b0;
+
+     spc1_flush0_active <= 1'b0;
+     spc1_flush1_active <= 1'b0;
+     spc1_flush2_active <= 1'b0;
+     spc1_flush3_active <= 1'b0;
+
+     spc1_intr0_active <= 1'b0;
+     spc1_intr1_active <= 1'b0;
+     spc1_intr2_active <= 1'b0;
+     spc1_intr3_active <= 1'b0;
+
+  end
+  else
+  begin
+    if(spc1_mbar_inst0_g & ~spc1_dctl_flush_pipe_w & (C1T0_stb_ne|~spc1_no_spc_rmo_st[0]))
+	spc1_mbar0_active <= 1'b1;
+    else if(~C1T0_stb_ne & spc1_no_spc_rmo_st[0])
+	spc1_mbar0_active <= 1'b0;
+    if(spc1_mbar_inst1_g & ~ spc1_dctl_flush_pipe_w & (C1T1_stb_ne|~spc1_no_spc_rmo_st[1]))
+	spc1_mbar1_active <= 1'b1;
+    else if(~C1T1_stb_ne & spc1_no_spc_rmo_st[1])
+	spc1_mbar1_active <= 1'b0;
+    if(spc1_mbar_inst2_g & ~ spc1_dctl_flush_pipe_w & (C1T2_stb_ne|~spc1_no_spc_rmo_st[2]))
+	spc1_mbar2_active <= 1'b1;
+    else if(~C1T2_stb_ne & spc1_no_spc_rmo_st[2])
+	spc1_mbar2_active <= 1'b0;
+    if(spc1_mbar_inst3_g & ~ spc1_dctl_flush_pipe_w & (C1T3_stb_ne|~spc1_no_spc_rmo_st[3]))
+	spc1_mbar3_active <= 1'b1;
+    else if(~C1T3_stb_ne & spc1_no_spc_rmo_st[3])
+	spc1_mbar3_active <= 1'b0;
+
+    if(spc1_flush_inst0_g & ~spc1_dctl_flush_pipe_w & C1T0_stb_ne) 	spc1_flush0_active <= 1'b1;
+    else if(~C1T0_stb_ne)			  				spc1_flush0_active <= 1'b0;
+    if(spc1_flush_inst1_g & ~spc1_dctl_flush_pipe_w & C1T1_stb_ne) 	spc1_flush1_active <= 1'b1;
+    else if(~C1T1_stb_ne)			  				spc1_flush1_active <= 1'b0;
+    if(spc1_flush_inst2_g & ~spc1_dctl_flush_pipe_w & C1T2_stb_ne) 	spc1_flush2_active <= 1'b1;
+    else if(~C1T2_stb_ne)			  				spc1_flush2_active <= 1'b0;
+    if(spc1_flush_inst3_g & ~spc1_dctl_flush_pipe_w & C1T3_stb_ne) 	spc1_flush3_active <= 1'b1;
+    else if(~C1T3_stb_ne)			  				spc1_flush3_active <= 1'b0;
+
+    if(spc1_intrpt_disp_asi0_g & spc1_st_inst_vld_g & ~spc1_non_altspace_ldst_g & ~spc1_dctl_flush_pipe_w & C1T0_stb_ne)
+	spc1_intr0_active <= 1'b1;
+    else if(~C1T0_stb_ne)
+	spc1_intr0_active <= 1'b0;
+    if(spc1_intrpt_disp_asi1_g &  spc1_st_inst_vld_g & ~spc1_non_altspace_ldst_g & ~spc1_dctl_flush_pipe_w & C1T1_stb_ne)
+	spc1_intr1_active <= 1'b1;
+    else if(~C1T1_stb_ne)
+	spc1_intr1_active <= 1'b0;
+    if(spc1_intrpt_disp_asi2_g &  spc1_st_inst_vld_g & ~spc1_non_altspace_ldst_g & ~spc1_dctl_flush_pipe_w & C1T2_stb_ne)
+	spc1_intr2_active <= 1'b1;
+    else if(~C1T2_stb_ne)
+	spc1_intr2_active <= 1'b0;
+    if(spc1_intrpt_disp_asi3_g &  spc1_st_inst_vld_g & ~spc1_non_altspace_ldst_g & ~spc1_dctl_flush_pipe_w & C1T3_stb_ne)
+	spc1_intr3_active <= 1'b1;
+    else if(~C1T3_stb_ne)
+	spc1_intr3_active <= 1'b0;
+  end
+
+  if(spc1_mbar0_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b00)
+    finish_test("spc", "membar violation thread 0", 1);
+  if(spc1_mbar1_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b01)
+    finish_test("spc", "membar violation thread 1", 1);
+  if(spc1_mbar2_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b10)
+    finish_test("spc", "membar violation thread 2", 1);
+  if(spc1_mbar3_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b11)
+    finish_test("spc", "membar violation thread 3", 1);
+
+  if(spc1_flush0_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b00)
+    finish_test("spc", "flush violation thread 0", 1);
+  if(spc1_flush1_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b01)
+    finish_test("spc", "flush violation thread 1", 1);
+  if(spc1_flush2_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b10)
+    finish_test("spc", "flush violation thread 2", 1);
+  if(spc1_flush3_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b11)
+    finish_test("spc", "flush violation thread 3", 1);
+
+  if(spc1_intr0_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b00)
+    finish_test("spc", "intr violation thread 0", 1);
+  if(spc1_intr1_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b01)
+    finish_test("spc", "intr violation thread 1", 1);
+  if(spc1_intr2_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b10)
+    finish_test("spc", "intr violation thread 2", 1);
+  if(spc1_intr3_active & spc1_inst_vld_w & spc1_sas_thrid_w[1:0] == 2'b11)
+    finish_test("spc", "intr violation thread 3", 1);
+
+   else							C1T0_stb_drain_cnt = C1T0_stb_drain_cnt + 1;
+   if(C1T0_stb_drain_cnt > stb_drain_to_max)
+     finish_test("spc", "stb 0 is not draining", 1);
+
+   else							C1T1_stb_drain_cnt = C1T1_stb_drain_cnt + 1;
+   if(C1T1_stb_drain_cnt > stb_drain_to_max)
+     finish_test("spc", "stb 1 is not draining", 1);
+
+   else							C1T2_stb_drain_cnt = C1T2_stb_drain_cnt + 1;
+   if(C1T2_stb_drain_cnt > stb_drain_to_max)
+     finish_test("spc", "stb 2 is not draining", 1);
+
+   else							C1T3_stb_drain_cnt = C1T3_stb_drain_cnt + 1;
+   if(C1T3_stb_drain_cnt > stb_drain_to_max)
+     finish_test("spc", "stb 3 is not draining", 1);
+
+  C1T0_stb_vld_sum_d1 <= C1T0_stb_vld_sum;
+  C1T1_stb_vld_sum_d1 <= C1T1_stb_vld_sum;
+  C1T2_stb_vld_sum_d1 <= C1T2_stb_vld_sum;
+  C1T3_stb_vld_sum_d1 <= C1T3_stb_vld_sum;
+  C1T0_defr_trp_en_d1 <= C1T0_defr_trp_en;
+  C1T1_defr_trp_en_d1 <= C1T1_defr_trp_en;
+  C1T2_defr_trp_en_d1 <= C1T2_defr_trp_en;
+  C1T3_defr_trp_en_d1 <= C1T3_defr_trp_en;
+
+  if(rst_l & C1T0_defr_trp_en_d1 & (C1T0_stb_vld_sum_d1 < C1T0_stb_vld_sum))
+     finish_test("spc", "tso_mon: deferred trap problems for store T0", 1);
+  if(rst_l & C1T1_defr_trp_en_d1 & (C1T1_stb_vld_sum_d1 < C1T1_stb_vld_sum))
+     finish_test("spc", "tso_mon: deferred trap problems for store T1", 1);
+  if(rst_l & C1T2_defr_trp_en_d1 & (C1T2_stb_vld_sum_d1 < C1T2_stb_vld_sum))
+     finish_test("spc", "tso_mon: deferred trap problems for store T2", 1);
+  if(rst_l & C1T3_defr_trp_en_d1 & (C1T3_stb_vld_sum_d1 < C1T3_stb_vld_sum))
+     finish_test("spc", "tso_mon: deferred trap problems for store T3", 1);
+
+end
+`endif
+
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -1042,6 +1813,100 @@ begin
       release `SPARC_CORE0.sparc0.lsu.qctl2.dfq_byp_ff_en;
 `endif
       spc0_dfq_forced  = 0;
+    end
+
+//-------------
+  end // of else reset
+
+end
+`endif
+
+
+`ifdef RTL_SPARC1
+reg [1:0] spc1_dfq_fsm1;
+integer  spc1_dfq_forced;
+
+initial begin
+    spc1_dfq_fsm1   = 2'b00;
+    spc1_dfq_forced = 0;
+end
+
+always @(posedge clk)
+begin
+  if(~rst_l)
+  begin
+    cpx_spc1_data_cx2_d2  <= `CPX_WIDTH'b0;
+    cpx_spc1_data_cx2_d1  <= `CPX_WIDTH'b0;
+    spc1_dfq_byp_ff_en_d1 <= 1'b0;
+    spc1_dfq_wr_en_d1     <= 1'b0;
+    spc1_dfq_fsm1	     <= 2'b00;
+    spc1_dfq_forced       <= 0;
+
+  end
+  else
+  begin
+
+    cpx_spc1_data_cx2_d2  <= cpx_spc1_data_cx2_d1;
+    cpx_spc1_data_cx2_d1  <= cpx_spc1_data_cx2;
+    spc1_dfq_byp_ff_en_d1 <= spc1_dfq_byp_ff_en;
+    spc1_dfq_wr_en_d1     <= spc1_dfq_wr_en;
+
+    if(cpx_spc1_data_cx2_d2[144] & (cpx_spc1_data_cx2_d2[143:140] == 4'h1) & ~cpx_spc1_data_cx2_d2[133] &
+       cpx_spc1_data_cx2_d1[144] & (cpx_spc1_data_cx2_d1[143:140] == 4'h1) &  cpx_spc1_data_cx2_d1[133])
+    begin
+      $display("%0d: spc%0d tso_mon:condition1 for bug6362\n", $time, 1);
+      if(spc1_dfq_wr_en & ~spc1_dfq_wr_en_d1 & ~spc1_dfq_byp_ff_en)
+      begin
+        $display("%0d: spc%0d tso_mon:condition2 for bug6362\n", $time, 1);
+
+        if(spc1_dfq_fsm1 == 2'b00)
+          spc1_dfq_fsm1 <= 2'b01;
+        else
+          finish_test("spc", "tso_mon:something is wrong with dfq_fsm1", 1);
+
+        if(kill_on_cross_mod_code)
+          finish_test("spc", "tso_mon:condition2 for bug6362", 1);
+      end
+    end
+
+    if((spc1_dfq_fsm1 == 2'b01) & spc1_lsu_ifill_pkt_vld & spc1_dfq_rd_advance)
+    begin
+      spc1_dfq_fsm1 <= 2'b00;	// IDLE
+    end
+    else if((spc1_dfq_fsm1 == 2'b01) & spc1_lsu_ifill_pkt_vld & ~spc1_dfq_rd_advance)
+    begin
+      spc1_dfq_fsm1 <= 2'b10;	// UNFINISHED HANDSHAKE
+    end
+    else if((spc1_dfq_fsm1 == 2'b10) & spc1_lsu_ifill_pkt_vld & spc1_dfq_rd_advance)
+    begin
+      spc1_dfq_fsm1 <= 2'b00;
+    end
+    else if((spc1_dfq_fsm1 == 2'b10) & ~spc1_lsu_ifill_pkt_vld)
+    begin
+          finish_test("spc", "tso_mon:bug6362 hit - ifill_pkt goes out BEFORE dfq_rd_advance", 1);
+    end
+
+    if(force_dfq & ~spc1_dfq_byp_ff_en & (spc1_dfq_forced == 0))
+    begin
+      $display("%0d: spc%0d forcing spc1_dfq_forced\n", $time, 1);
+`ifndef RTL_SPU
+      force `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_byp_ff_en = 1'b0;
+`else
+      force `SPARC_CORE1.sparc0.lsu.qctl2.dfq_byp_ff_en = 1'b0;
+`endif
+      spc1_dfq_forced = 1;
+    end
+    else if((spc1_dfq_forced >0) && (spc1_dfq_forced <10))
+         spc1_dfq_forced =  spc1_dfq_forced + 1;
+    else if(spc1_dfq_forced !=0)
+    begin
+      $display("%0d: spc%0d releasing spc1_dfq_forced\n", $time, 1);
+`ifndef RTL_SPU
+      release `SPARC_CORE1.sparc0.lsu.lsu.qctl2.dfq_byp_ff_en;
+`else
+      release `SPARC_CORE1.sparc0.lsu.qctl2.dfq_byp_ff_en;
+`endif
+      spc1_dfq_forced  = 0;
     end
 
 //-------------

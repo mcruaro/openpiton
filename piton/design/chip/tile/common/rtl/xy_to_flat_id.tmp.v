@@ -59,6 +59,22 @@ begin
      endcase
 end
 
+`NOC_X_WIDTH'd1:
+begin
+     case (y_coord)
+
+    // (x,y) = (1, 0)
+    `NOC_Y_WIDTH'd0:
+    begin
+        flat_id = `HOME_ID_WIDTH'd1;
+    end
+     default:
+     begin
+         flat_id = `HOME_ID_WIDTH'dX;
+     end
+     endcase
+end
+
         default:
         begin
             flat_id = `HOME_ID_WIDTH'dX;

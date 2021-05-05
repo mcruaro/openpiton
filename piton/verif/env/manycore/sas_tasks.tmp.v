@@ -694,6 +694,506 @@ sas_task task0 (/*AUTOINST*/
 
 
 
+ `ifdef RTL_SPARC1
+sas_task task1 (/*AUTOINST*/
+             // Inputs
+             .tlu_pich_wrap_flg_m (`TLUPATH1.tcl.tlu_pich_wrap_flg_m), // Templated
+             .tlu_pic_cnt_en_m  (`TLUPATH1.tcl.tlu_pic_cnt_en_m), // Templated
+             .final_ttype_sel_g (`TLUPATH1.tcl.final_ttype_sel_g), // Templated
+             .rst_ttype_w2  (`TLUPATH1.tcl.rst_ttype_w2), // Templated
+             .sync_trap_taken_m (`TLUPATH1.tcl.sync_trap_taken_m), // Templated
+             .pib_picl_wrap (`TLUPATH1.pib_picl_wrap), // Templated
+             .pib_pich_wrap_m (`TLUPATH1.tcl.pib_pich_wrap_m), // Templated
+             .pib_pich_wrap (`TLUPATH1.pib_pich_wrap), // Templated
+             .pic_wrap_trap_g (`TLUPATH1.tcl.pib_wrap_trap_g), // Templated
+             .pib_wrap_trap_m (`TLUPATH1.tcl.pib_wrap_trap_m), // Templated
+             .pcr_rw_e    (`TLUPATH1.tlu_pib.pcr_rw_e), // Templated
+             .tlu_rsr_inst_e  (`TLUPATH1.tlu_pib.tlu_rsr_inst_e), // Templated
+             .pcr0    (`TLUPATH1.tlu_pib.pcr0), // Templated
+             .pcr1    (`TLUPATH1.tlu_pib.pcr1), // Templated
+             .pcr2    (`TLUPATH1.tlu_pib.pcr2), // Templated
+             .pcr3    (`TLUPATH1.tlu_pib.pcr3), // Templated
+             .wsr_pcr_sel   (`TLUPATH1.tlu_pib.wsr_pcr_sel), // Templated
+             .pich_cnt0   (`TLUPATH1.tlu_pib.pich_cnt0), // Templated
+             .pich_cnt1   (`TLUPATH1.tlu_pib.pich_cnt1), // Templated
+             .pich_cnt2   (`TLUPATH1.tlu_pib.pich_cnt2), // Templated
+             .pich_cnt3   (`TLUPATH1.tlu_pib.pich_cnt3), // Templated
+             .picl_cnt0   (`TLUPATH1.tlu_pib.picl_cnt0), // Templated
+             .picl_cnt1   (`TLUPATH1.tlu_pib.picl_cnt1), // Templated
+             .picl_cnt2   (`TLUPATH1.tlu_pib.picl_cnt2), // Templated
+             .picl_cnt3   (`TLUPATH1.tlu_pib.picl_cnt3), // Templated
+             .update_pich_sel (`TLUPATH1.tlu_pib.update_pich_sel), // Templated
+             .update_picl_sel (`TLUPATH1.tlu_pib.update_picl_sel), // Templated
+`ifndef RTL_SPU
+             .const_maskid  (`PCXPATH1.ifu.ifu.fdp.const_maskid), // Templated
+             .fprs_sel_wrt  (`PCXPATH1.ifu.ifu.swl.fprs_sel_wrt), // Templated
+             .fprs_sel_set  (`PCXPATH1.ifu.ifu.swl.fprs_sel_set), // Templated
+             .fprs_wrt_data (`PCXPATH1.ifu.ifu.swl.fprs_wrt_data), // Templated
+             .new_fprs    (`PCXPATH1.ifu.ifu.swl.new_fprs), // Templated
+             .ifu_lsu_pref_inst_e (`PCXPATH1.ifu_lsu_pref_inst_e), // Templated
+             .formatted_tte_data  (`PCXPATH1.ifu.ifu.errdp.formatted_tte_data), // Templated
+`else
+             .const_maskid  (`PCXPATH1.ifu.fdp.const_maskid), // Templated
+             .fprs_sel_wrt  (`PCXPATH1.ifu.swl.fprs_sel_wrt), // Templated
+             .fprs_sel_set  (`PCXPATH1.ifu.swl.fprs_sel_set), // Templated
+             .fprs_wrt_data (`PCXPATH1.ifu.swl.fprs_wrt_data), // Templated
+             .new_fprs    (`PCXPATH1.ifu.swl.new_fprs), // Templated
+             .ifu_lsu_pref_inst_e (`PCXPATH1.ifu_lsu_pref_inst_e), // Templated
+             .formatted_tte_data  (`PCXPATH1.ifu.errdp.formatted_tte_data), // Templated
+`endif
+             .dformatted_tte_data (`SPARC_CORE0.`LSU_PATH.tlbdp.formatted_tte_data), // Templated
+             .dtlb_cam_vld  (`SPARC_CORE0.`LSU_PATH.dtlb.tlb_cam_vld), // Templated
+             .dtlb_tte_vld_g  (`SPARC_CORE0.`LSU_PATH.excpctl.tlb_tte_vld_g), // Templated
+             .tlu_hpstate_priv  (`PCXPATH1.tlu_hpstate_priv), // Templated
+             .tlu_hpstate_enb (`PCXPATH1.tlu_hpstate_enb), // Templated
+`ifndef RTL_SPU
+             .fcl_dtu_inst_vld_d  (`PCXPATH1.ifu.ifu.fcl_dtu_inst_vld_d), // Templated
+             .icache_hit    (`PCXPATH1.ifu.ifu.itlb.cache_hit), // Templated
+             .xlate_en    (`PCXPATH1.ifu.ifu.fcl.xlate_en), // Templated
+`else
+             .fcl_dtu_inst_vld_d  (`PCXPATH1.ifu.fcl_dtu_inst_vld_d), // Templated
+             .icache_hit    (`PCXPATH1.ifu.itlb.cache_hit), // Templated
+             .xlate_en    (`PCXPATH1.ifu.fcl.xlate_en), // Templated
+`endif
+             .ifu_lsu_thrid_s (`PCXPATH1.ifu_lsu_thrid_s), // Templated
+             .fcl_ifq_icmiss_s1 (`IFUPATH1.fcl.fcl_ifq_icmiss_s1), // Templated
+             .tlu_exu_early_flush_pipe_w(`PCXPATH1.tlu_exu_early_flush_pipe_w), // Templated
+             .rst_hwint_ttype_g (`TLUPATH1.tcl.rst_hwint_ttype_g), // Templated
+             .trap_taken_g  (`TLUPATH1.tcl.trap_taken_g), // Templated
+`ifndef RTL_SPU
+             .spu_lsu_ldxa_illgl_va_w2(1'b0), // Templated
+             .spu_lsu_ldxa_data_vld_w2(1'b0), // Templated
+             .spu_lsu_ldxa_tid_w2 (2'b0), // Templated
+`else
+             .spu_lsu_ldxa_illgl_va_w2(`PCXPATH1.spu.spu_ctl.spu_lsu_ldxa_illgl_va_w2), // Templated
+             .spu_lsu_ldxa_data_vld_w2(`PCXPATH1.spu.spu_ctl.spu_lsu_ldxa_data_vld_w2), // Templated
+             .spu_lsu_ldxa_tid_w2 (`PCXPATH1.spu.spu_ctl.spu_lsu_ldxa_tid_w2), // Templated
+`endif
+             .mra_field1_en (`TLUPATH1.mmu_ctl.mra_field1_en), // Templated
+             .mra_field2_en (`TLUPATH1.mmu_ctl.mra_field2_en), // Templated
+             .mra_field3_en (`TLUPATH1.mmu_ctl.mra_field3_en), // Templated
+             .mra_field4_en (`TLUPATH1.mmu_ctl.mra_field4_en), // Templated
+             .pmem_unc_error_g  (`SPARC_CORE0.`LSU_PATH.dctl.pmem_unc_error_g), // Templated
+`ifndef RTL_SPU
+             .pc_f    (`PCXPATH1.ifu.ifu.fdp.pc_f), // Templated
+             .cam_vld_f   (`PCXPATH1.ifu.ifu.fcl.cam_vld_f), // Templated
+`else
+             .pc_f    (`PCXPATH1.ifu.fdp.pc_f), // Templated
+             .cam_vld_f   (`PCXPATH1.ifu.fcl.cam_vld_f), // Templated
+`endif
+             .cam_vld   (`SPARC_CORE0.`LSU_PATH.dtlb.cam_vld), // Templated
+             .defr_trp_taken_m_din(`SPARC_CORE0.`LSU_PATH.excpctl.defr_trp_taken_m_din), // Templated
+             .illgl_va_vld_or_drop_ldxa2masync(1'b0), // Templated
+`ifndef RTL_SPU
+             .ecc_wen   (`PCXPATH1.ffu.ffu.ctl.ecc_wen), // Templated
+`else
+             .ecc_wen   (`PCXPATH1.ffu.ctl.ecc_wen), // Templated
+`endif
+             .fpdis_trap_e  (`IFUPATH1.dec.fpdis_trap_e), // Templated
+             .ceen    (`IFUPATH1.errctl.ceen), // Templated
+             .nceen   (`IFUPATH1.errctl.nceen), // Templated
+             .ifu_tlu_flush_m (`TLUPATH1.ifu_tlu_flush_m), // Templated
+             .lsu_tlu_ttype_m2  (`TLUPATH1.lsu_tlu_ttype_m2), // Templated
+             .lsu_tlu_ttype_vld_m2(`TLUPATH1.lsu_tlu_ttype_vld_m2), // Templated
+             .tlu_final_ttype_w2  (`TLUPATH1.tlu_final_ttype_w2), // Templated
+             .tlu_ifu_trappc_vld_w1(`TLUPATH1.tlu_ifu_trappc_vld_w1), // Templated
+             .mra_wr_ptr    (`TLUPATH1.mra_wr_ptr),  // Templated
+             .mra_wr_vld    (`TLUPATH1.mra_wr_vld),  // Templated
+             .lsu_pid_state0  (`SPARC_CORE0.`LSU_PATH.lsu_pid_state0), // Templated
+             .lsu_pid_state1  (`SPARC_CORE0.`LSU_PATH.lsu_pid_state1), // Templated
+             .lsu_pid_state2  (`SPARC_CORE0.`LSU_PATH.lsu_pid_state2), // Templated
+             .lsu_pid_state3  (`SPARC_CORE0.`LSU_PATH.lsu_pid_state3), // Templated
+             .pid_state_wr_en (`SPARC_CORE0.`LSU_PATH.pid_state_wr_en), // Templated
+             .lsu_t0_pctxt_state  (`SPARC_CORE0.`LSU_PATH.lsu_t0_pctxt_state), // Templated
+             .lsu_t1_pctxt_state  (`SPARC_CORE0.`LSU_PATH.lsu_t1_pctxt_state), // Templated
+             .lsu_t2_pctxt_state  (`SPARC_CORE0.`LSU_PATH.lsu_t2_pctxt_state), // Templated
+             .lsu_t3_pctxt_state  (`SPARC_CORE0.`LSU_PATH.lsu_t3_pctxt_state), // Templated
+             .pctxt_state_wr_thrd (`SPARC_CORE0.`LSU_PATH.pctxt_state_wr_thrd), // Templated
+             .sctxt_state0  (`SPARC_CORE0.`LSU_PATH.dctldp.sctxt_state0), // Templated
+             .sctxt_state1  (`SPARC_CORE0.`LSU_PATH.dctldp.sctxt_state1), // Templated
+             .sctxt_state2  (`SPARC_CORE0.`LSU_PATH.dctldp.sctxt_state2), // Templated
+             .sctxt_state3  (`SPARC_CORE0.`LSU_PATH.dctldp.sctxt_state3), // Templated
+             .sctxt_state_wr_thrd (`SPARC_CORE0.`LSU_PATH.dctldp.sctxt_state_wr_thrd), // Templated
+             .va_wtchpt0_addr (`SPARC_CORE0.`LSU_PATH.qdp1.va_wtchpt0_addr), // Templated
+             .va_wtchpt1_addr (`SPARC_CORE0.`LSU_PATH.qdp1.va_wtchpt1_addr), // Templated
+             .va_wtchpt2_addr (`SPARC_CORE0.`LSU_PATH.qdp1.va_wtchpt2_addr), // Templated
+             .va_wtchpt3_addr (`SPARC_CORE0.`LSU_PATH.qdp1.va_wtchpt3_addr), // Templated
+             .lsu_va_wtchpt0_wr_en_l(`SPARC_CORE0.`LSU_PATH.lsu_va_wtchpt0_wr_en_l), // Templated
+             .lsu_va_wtchpt1_wr_en_l(`SPARC_CORE0.`LSU_PATH.lsu_va_wtchpt1_wr_en_l), // Templated
+             .lsu_va_wtchpt2_wr_en_l(`SPARC_CORE0.`LSU_PATH.lsu_va_wtchpt2_wr_en_l), // Templated
+             .lsu_va_wtchpt3_wr_en_l(`SPARC_CORE0.`LSU_PATH.lsu_va_wtchpt3_wr_en_l), // Templated
+             .ifu_rstint_m  (`TLPATH1.ifu_rstint_m), // Templated
+`ifndef RTL_SPU
+             .spu_tlu_rsrv_illgl_m(`PCXPATH1.tlu.tlu.spu_tlu_rsrv_illgl_m), // Templated
+`else
+             .spu_tlu_rsrv_illgl_m(`PCXPATH1.tlu.spu_tlu_rsrv_illgl_m), // Templated
+`endif
+             .cam_vld_s1    (`IFUPATH1.fcl.cam_vld_s1), // Templated
+             .val_thr_s1    (`IFUPATH1.fcl.val_thr_s1), // Templated
+             .pc_s    (`IFUPATH1.fdp.pc_s),  // Templated
+`ifndef RTL_SPU
+             .rs2_fst_ue_w3 (`PCXPATH1.ffu.ffu.ctl.rs2_fst_ue_w3), // Templated
+             .rs2_fst_ce_w3 (`PCXPATH1.ffu.ffu.ctl.rs2_fst_ce_w3), // Templated
+`else
+             .rs2_fst_ue_w3 (`PCXPATH1.ffu.ctl.rs2_fst_ue_w3), // Templated
+             .rs2_fst_ce_w3 (`PCXPATH1.ffu.ctl.rs2_fst_ce_w3), // Templated
+`endif
+             .lsu_tlu_async_ttype_vld_w2(`PCXPATH1.lsu_tlu_async_ttype_vld_w2), // Templated
+             .lsu_tlu_defr_trp_taken_g(`PCXPATH1.lsu_tlu_defr_trp_taken_g), // Templated
+             .lsu_tlu_async_ttype_w2(`PCXPATH1.lsu_tlu_async_ttype_w2), // Templated
+             .lsu_tlu_async_tid_w2(`PCXPATH1.lsu_tlu_async_tid_w2), // Templated
+`ifndef RTL_SPU
+             .itlb_rw_index (`PCXPATH1.ifu.ifu.itlb.tlb_rw_index), // Templated
+             .itlb_rw_index_vld (`PCXPATH1.ifu.ifu.itlb.tlb_rw_index_vld), // Templated
+             .itlb_rd_tte_tag (`PCXPATH1.ifu.ifu.itlb.tlb_rd_tte_tag), // Templated
+             .itlb_rd_tte_data  (`PCXPATH1.ifu.ifu.itlb.rd_tte_data), // Templated
+             .icam_hit    ({48'b0,`PCXPATH1.ifu.ifu.itlb.cam_hit}), // Templated
+`else
+             .itlb_rw_index (`PCXPATH1.ifu.itlb.tlb_rw_index), // Templated
+             .itlb_rw_index_vld (`PCXPATH1.ifu.itlb.tlb_rw_index_vld), // Templated
+             .itlb_rd_tte_tag (`PCXPATH1.ifu.itlb.tlb_rd_tte_tag), // Templated
+             .itlb_rd_tte_data  (`PCXPATH1.ifu.itlb.rd_tte_data), // Templated
+             .icam_hit    ({48'b0,`PCXPATH1.ifu.itlb.cam_hit}), // Templated
+`endif
+             .dtlb_rw_index (`SPARC_CORE0.`LSU_PATH.dtlb.tlb_rw_index), // Templated
+             .dtlb_rw_index_vld (`SPARC_CORE0.`LSU_PATH.dtlb.tlb_rw_index_vld), // Templated
+             .dtlb_rd_tte_tag (`SPARC_CORE0.`LSU_PATH.dtlb.tlb_rd_tte_tag), // Templated
+             .dtlb_rd_tte_data  (`SPARC_CORE0.`LSU_PATH.dtlb.rd_tte_data), // Templated
+             .dcam_hit    ({48'b0,`SPARC_CORE0.`LSU_PATH.dtlb.cam_hit}), // Templated
+             .wrt_spec_w    (`IFUPATH1.swl.wrt_spec_w), // Templated
+             .spc_pcx_data_pa (124'b0), // Templated //tttttttttttttt
+             .fcl_fdp_inst_sel_nop_s_l(`IFUPATH1.fdp.fcl_fdp_inst_sel_nop_s_l), // Templated
+             .retract_iferr_d (`IFUPATH1.swl.retract_iferr_d), // Templated
+             .inst_vld_w    (`INSTPATH1.inst_vld_w), // Templated
+             .dmmu_async_illgl_va_g(`TLUPATH1.mmu_ctl.dmmu_async_illgl_va_g), // Templated
+             .immu_async_illgl_va_g(`TLUPATH1.mmu_ctl.immu_async_illgl_va_g), // Templated
+             .lsu_tlu_tlb_ld_inst_m(`TLUPATH1.mmu_ctl.lsu_tlu_tlb_ld_inst_m), // Templated
+             .lsu_tlu_tlb_st_inst_m(`TLUPATH1.mmu_ctl.lsu_tlu_tlb_st_inst_m), // Templated
+             .immu_sfsr_wr_en_l (`TLUPATH1.immu_sfsr_wr_en_l), // Templated
+             .dmmu_sfsr_wr_en_l (`TLUPATH1.dmmu_sfsr_wr_en_l), // Templated
+             .dmmu_sfar_wr_en_l (`TLUPATH1.dmmu_sfar_wr_en_l), // Templated
+             .lsu_quad_asi_e  (`SPARC_CORE0.`LSU_PATH.lsu_quad_asi_e), // Templated
+             .clk     (clk),       // Templated
+             .rst_l   (rst_l),     // Templated
+             .back    (`PC_CMP.back_thread[2*4-1:1*4]), // Templated
+             .lsu_ifu_ldsta_internal_e(`IFUPATH1.lsu_ifu_ldsta_internal_e), // Templated
+             .lsu_mmu_flush_pipe_w(`TLUPATH1.lsu_mmu_flush_pipe_w), // Templated
+             .dtlb_wr_vld   (`DTLBPATH1.tlb_wr_vld), // Templated
+             .dtlb_demap    (`DTLBPATH1.tlb_demap),  // Templated
+             .dtlb_rd_tag_vld (`DTLBPATH1.tlb_rd_tag_vld), // Templated
+             .dtlb_rd_data_vld  (`DTLBPATH1.tlb_rd_data_vld), // Templated
+             .dtlb_entry_vld  ({48'd0,`DTLBPATH1.tlb_entry_vld}), // Templated
+             .itlb_wr_vld   (`ITLBPATH1.tlb_wr_vld), // Templated
+             .itlb_demap    (`ITLBPATH1.tlb_demap),  // Templated
+             .itlb_rd_tag_vld (`ITLBPATH1.tlb_rd_tag_vld), // Templated
+             .itlb_rd_data_vld  (`ITLBPATH1.tlb_rd_data_vld), // Templated
+             .itlb_entry_vld  ({48'd0,`ITLBPATH1.tlb_entry_vld}), // Templated
+             .tlb_access_tid_g  (`TLUPATH1.mmu_ctl.tlb_access_tid_g), // Templated
+             .dsfar0_clk    (`TLUPATH1.mmu_dp.dsfar0_clk), // Templated
+             .dsfar1_clk    (`TLUPATH1.mmu_dp.dsfar1_clk), // Templated
+             .dsfar2_clk    (`TLUPATH1.mmu_dp.dsfar2_clk), // Templated
+             .dsfar3_clk    (`TLUPATH1.mmu_dp.dsfar3_clk), // Templated
+             .dsfar_din   (`TLUPATH1.mmu_dp.dsfar_din), // Templated
+             .dtu_inst_d    (`IFUPATH1.dec.dtu_inst_d), // Templated
+             .local_rdpr_mx1_sel  (`TLPATH1.local_rdpr_mx1_sel), // Templated
+             .tlu_rdpr_mx5_sel  (`TLPATH1.tlu_rdpr_mx5_sel), // Templated
+             .tlu_rdpr_mx7_sel  (`TLPATH1.tlu_rdpr_mx7_sel), // Templated
+             .tlu_rst_l   (`TLPATH1.tlu_rst_l),  // Templated
+             .tick_match    (`TDPPATH1.tick_match),  // Templated
+             .tlu_wr_sftint_l_g (`TLUPATH1.tlu_wr_sftint_l_g), // Templated
+             .dsfsr_din   (`TLUPATH1.mmu_dp.dsfsr_din), // Templated
+             .dsfsr0_clk    (`TLUPATH1.mmu_dp.dsfsr0_clk), // Templated
+             .dsfsr1_clk    (`TLUPATH1.mmu_dp.dsfsr1_clk), // Templated
+             .dsfsr2_clk    (`TLUPATH1.mmu_dp.dsfsr2_clk), // Templated
+             .dsfsr3_clk    (`TLUPATH1.mmu_dp.dsfsr3_clk), // Templated
+             .isfsr_din   (`TLUPATH1.mmu_dp.isfsr_din), // Templated
+             .isfsr0_clk    (`TLUPATH1.mmu_dp.isfsr0_clk), // Templated
+             .isfsr1_clk    (`TLUPATH1.mmu_dp.isfsr1_clk), // Templated
+             .isfsr2_clk    (`TLUPATH1.mmu_dp.isfsr2_clk), // Templated
+             .isfsr3_clk    (`TLUPATH1.mmu_dp.isfsr3_clk), // Templated
+             .ecl_byp_sel_ecc_w (`IFUPATH1.errctl.irf_ce_unq), // Templated
+             .ifu_exu_inst_w  (`INSTPATH1.ifu_exu_inst_vld_w), // Templated
+             .ctl_dp_fp_thr (`FLOATPATH1.ctl_dp_fp_thr), // Templated
+             .ifu_ffu_fst_d (`FLOATPATH1.ifu_ffu_fst_d), // Templated
+             .pc_e    (`DTUPATH1.pc_e),  // Templated
+             .fcl_dtu_inst_vld_e  (`INSTPATH1.fcl_dtu_inst_vld_e), // Templated
+             .exu_lsu_rs3_data_e  (`PCXPATH1.exu_lsu_rs3_data_e), // Templated
+             .tick_ctl_din  (`TLPATH1.tick_ctl_din), // Templated
+             .ifu_tlu_ttype_m (`PCXPATH1.ifu_tlu_ttype_m), // Templated
+             .tlu_rerr_vld  (`PCXPATH1.tlu_rerr_vld), // Templated
+             .sftint0   (`TDPPATH1.sftint0),   // Templated
+             .sftint1   (`TDPPATH1.sftint1),   // Templated
+             .sftint2   (`TDPPATH1.sftint2),   // Templated
+             .sftint3   (`TDPPATH1.sftint3),   // Templated
+             .sftint0_clk   (`TDPPATH1.sftint0_clk), // Templated
+             .sftint1_clk   (`TDPPATH1.sftint1_clk), // Templated
+             .sftint2_clk   (`TDPPATH1.sftint2_clk), // Templated
+             .sftint3_clk   (`TDPPATH1.sftint3_clk), // Templated
+             .sftint_b0_en  (`TDPPATH1.sftint_b0_en), // Templated
+             .sftint_b15_en (`TDPPATH1.sftint_b15_en), // Templated
+             .sftint_b16_en (`TDPPATH1.sftint_b16_en), // Templated
+             .cpx_spc_data_cx2  (`PCXPATH1.cpx_spc_data_cx2), // Templated
+             .ifu_exu_save_d  (`PCXPATH1.ifu_exu_save_d), // Templated
+             .ifu_exu_restore_d (`PCXPATH1.ifu_exu_restore_d), // Templated
+             .ifu_tlu_thrid_d (`PCXPATH1.ifu_tlu_thrid_d), // Templated
+             .tlu_ifu_hwint_i3  (`TLUPATH1.tlu_ifu_hwint_i3), // Templated
+             .ifu_tlu_hwint_m (`TLUPATH1.ifu_tlu_hwint_m), // Templated
+             .ifu_tlu_rstint_m  (`TLUPATH1.ifu_tlu_rstint_m), // Templated
+             .ifu_tlu_swint_m (`TLUPATH1.ifu_tlu_swint_m), // Templated
+             .tlu_ifu_flush_pipe_w(`TLPATH1.tlu_ifu_flush_pipe_w), // Templated
+             .ifu_tlu_flush_w (`PCXPATH1.ifu_tlu_flush_w), // Templated
+             .ffu_ifu_fst_ce_w  (`PCXPATH1.ffu_ifu_fst_ce_w), // Templated
+`ifndef RTL_SPU
+             .ffu_ifu_ecc_ue_w2 (`PCXPATH1.ffu.ffu.ffu_ifu_ecc_ue_w2), // Templated
+             .ffu_ifu_ecc_ce_w2 (`PCXPATH1.ffu.ffu.ffu_ifu_ecc_ce_w2), // Templated
+`else
+             .ffu_ifu_ecc_ue_w2 (`PCXPATH1.ffu.ffu_ifu_ecc_ue_w2), // Templated
+             .ffu_ifu_ecc_ce_w2 (`PCXPATH1.ffu.ffu_ifu_ecc_ce_w2), // Templated
+`endif
+             .any_err_vld   (`IFUPATH1.errctl.any_err_vld), // Templated
+             .any_ue_vld    (`IFUPATH1.errctl.any_ue_vld), // Templated
+             .tsa_htstate_en  (`TLPATH1.tsa_htstate_en), // Templated
+             .stickcmp_intdis_en  (`TDPPATH1.stickcmp_intdis_en), // Templated
+             .tick_npt0   (`TLPATH1.tick_npt0),  // Templated
+             .tick_npt1   (`TLPATH1.tick_npt1),  // Templated
+             .tick_npt2   (`TLPATH1.tick_npt2),  // Templated
+             .tick_npt3   (`TLPATH1.tick_npt3),  // Templated
+             .true_tick   (`TDPPATH1.true_tick),   // Templated
+             .htick_intdis0 (`TLU_HYPER0.htick_intdis0), // Templated
+             .htick_intdis1 (`TLU_HYPER0.htick_intdis1), // Templated
+             .htick_intdis2 (`TLU_HYPER0.htick_intdis2), // Templated
+             .htick_intdis3 (`TLU_HYPER0.htick_intdis3), // Templated
+             .true_stickcmp0  (`TDPPATH1.true_stickcmp0), // Templated
+             .true_stickcmp1  (`TDPPATH1.true_stickcmp1), // Templated
+             .true_stickcmp2  (`TDPPATH1.true_stickcmp2), // Templated
+             .true_stickcmp3  (`TDPPATH1.true_stickcmp3), // Templated
+             .tlu_hintp_en_l_g  (`TDPPATH1.tlu_hintp_en_l_g), // Templated
+             .tlu_hintp   (`TDPPATH1.tlu_hintp),   // Templated
+             .tlu_htba_en_l (`TDPPATH1.tlu_htba_en_l), // Templated
+             .true_htba0    (`TDPPATH1.true_htba0),  // Templated
+             .true_htba1    (`TDPPATH1.true_htba1),  // Templated
+             .true_htba2    (`TDPPATH1.true_htba2),  // Templated
+             .true_htba3    (`TDPPATH1.true_htba3),  // Templated
+             .update_hpstate_l_w2 (`TDPPATH1.tlu_update_hpstate_l_w2[3:0]), // Templated
+             .restore_hpstate0  (`TDPPATH1.restore_hpstate0), // Templated
+             .restore_hpstate1  (`TDPPATH1.restore_hpstate1), // Templated
+             .restore_hpstate2  (`TDPPATH1.restore_hpstate2), // Templated
+             .restore_hpstate3  (`TDPPATH1.restore_hpstate3), // Templated
+             .htickcmp_intdis_en  (`TLU_HYPER0.htickcmp_intdis_en), // Templated
+             .true_htickcmp0  (`TDPPATH1.true_htickcmp0), // Templated
+             .true_htickcmp1  (`TDPPATH1.true_htickcmp1), // Templated
+             .true_htickcmp2  (`TDPPATH1.true_htickcmp2), // Templated
+             .true_htickcmp3  (`TDPPATH1.true_htickcmp3), // Templated
+             .gl0_en    (`TLU_HYPER0.gl0_en),  // Templated
+             .gl1_en    (`TLU_HYPER0.gl1_en),  // Templated
+             .gl2_en    (`TLU_HYPER0.gl2_en),  // Templated
+             .gl3_en    (`TLU_HYPER0.gl3_en),  // Templated
+             .gl_lvl0_new   (`TLU_HYPER0.gl_lvl0_new), // Templated
+             .gl_lvl1_new   (`TLU_HYPER0.gl_lvl1_new), // Templated
+             .gl_lvl2_new   (`TLU_HYPER0.gl_lvl2_new), // Templated
+             .gl_lvl3_new   (`TLU_HYPER0.gl_lvl3_new), // Templated
+             .t0_gsr_nxt    (`FFUPATH1.dp.t0_gsr_nxt), // Templated
+             .t0_gsr_rnd_next (`FFUPATH1.ctl.visctl.t0_gsr_rnd_next), // Templated
+             .t0_gsr_align_next (`FFUPATH1.ctl.visctl.t0_gsr_align_next), // Templated
+             .t0_gsr_wsr_w  (`FFUPATH1.ctl.visctl.t0_gsr_wsr_w2), // Templated
+             .t0_siam_w   (`FFUPATH1.ctl.visctl.t0_siam_w2), // Templated
+             .t0_alignaddr_w  (`FFUPATH1.ctl.visctl.t0_alignaddr_w2), // Templated
+             .t1_gsr_nxt    (`FFUPATH1.dp.t1_gsr_nxt), // Templated
+             .t1_gsr_rnd_next (`FFUPATH1.ctl.visctl.t1_gsr_rnd_next), // Templated
+             .t1_gsr_align_next (`FFUPATH1.ctl.visctl.t1_gsr_align_next), // Templated
+             .t1_gsr_wsr_w  (`FFUPATH1.ctl.visctl.t1_gsr_wsr_w2), // Templated
+             .t1_siam_w   (`FFUPATH1.ctl.visctl.t1_siam_w2), // Templated
+             .t1_alignaddr_w  (`FFUPATH1.ctl.visctl.t1_alignaddr_w2), // Templated
+             .t2_gsr_nxt    (`FFUPATH1.dp.t2_gsr_nxt), // Templated
+             .t2_gsr_rnd_next (`FFUPATH1.ctl.visctl.t2_gsr_rnd_next), // Templated
+             .t2_gsr_align_next (`FFUPATH1.ctl.visctl.t2_gsr_align_next), // Templated
+             .t2_gsr_wsr_w  (`FFUPATH1.ctl.visctl.t2_gsr_wsr_w2), // Templated
+             .t2_siam_w   (`FFUPATH1.ctl.visctl.t2_siam_w2), // Templated
+             .t2_alignaddr_w  (`FFUPATH1.ctl.visctl.t2_alignaddr_w2), // Templated
+             .t3_gsr_nxt    (`FFUPATH1.dp.t3_gsr_nxt), // Templated
+             .t3_gsr_rnd_next (`FFUPATH1.ctl.visctl.t3_gsr_rnd_next), // Templated
+             .t3_gsr_align_next (`FFUPATH1.ctl.visctl.t3_gsr_align_next), // Templated
+             .t3_gsr_wsr_w  (`FFUPATH1.ctl.visctl.t3_gsr_wsr_w2), // Templated
+             .t3_siam_w   (`FFUPATH1.ctl.visctl.t3_siam_w2), // Templated
+             .t3_alignaddr_w  (`FFUPATH1.ctl.visctl.t3_alignaddr_w2), // Templated
+             .exu_lsu_ldst_va_e (`ASIDPPATH1.exu_lsu_ldst_va_e[47:0]), // Templated
+             .asi_state_e   (`ASIDPPATH1.asi_state_e[7:0]), // Templated
+             .cpu_num   (cpu_num),     // Templated
+             .good    (`PC_CMP.good[2*4-1:1*4]),   // Templated
+             .active    (`PC_CMP.active_thread[2*4-1:1*4]), // Templated
+             .finish    (`PC_CMP.finish_mask[2*4-1:1*4]), // Templated
+             .lda_internal_e  (`ASIPATH1.lda_internal_e), // Templated
+             .sta_internal_e  (`ASIPATH1.sta_internal_e), // Templated
+             .ifu_spu_trap_ack  ({1'b0,`SPCPATH1.ifu_spu_trap_ack}), // Templated
+             .ifu_exu_muls_d  (`SPCPATH1.ifu_exu_muls_d), // Templated
+             .ifu_exu_tid_s2  (`EXUPATH1.ifu_exu_tid_s2[1:0]), // Templated
+             .rml_irf_restore_local_m(`EXUPATH1.irf.irf.swap_local_w), // Templated
+             .rml_irf_cwp_m (`EXUPATH1.irf.irf.old_lo_cwp_m[2:0]), // Templated
+             .rml_irf_save_local_m(`EXUPATH1.irf.irf.swap_local_m), // Templated
+             .rml_irf_thr_m (`EXUPATH1.irf.irf.cwpswap_tid_m[1:0]), // Templated
+             .ifu_exu_save_e  (`EXUPATH1.rml.save_e),  // Templated
+             .exu_tlu_spill_e (`EXUPATH1.rml.exu_tlu_spill_e), // Templated
+             .t0_fsr_nxt    (`FLOATPATH1.dp.t0_fsr_nxt[27:0]), // Templated
+             .t1_fsr_nxt    (`FLOATPATH1.dp.t1_fsr_nxt[27:0]), // Templated
+             .t2_fsr_nxt    (`FLOATPATH1.dp.t2_fsr_nxt[27:0]), // Templated
+             .t3_fsr_nxt    (`FLOATPATH1.dp.t3_fsr_nxt[27:0]), // Templated
+             .ctl_dp_fsr_sel_old  (`FLOATPATH1.ctl_dp_fsr_sel_old[3:0]), // Templated
+             .tlu_sftint_en_l_g (`TLUPATH1.tlu_sftint_en_l_g[3:0]), // Templated
+             .true_tickcmp0 (`TDPPATH1.true_tickcmp0), // Templated
+             .true_tickcmp1 (`TDPPATH1.true_tickcmp1), // Templated
+             .true_tickcmp2 (`TDPPATH1.true_tickcmp2), // Templated
+             .true_tickcmp3 (`TDPPATH1.true_tickcmp3), // Templated
+             .tickcmp_intdis_en (`TDPPATH1.tickcmp_intdis_en[3:0]), // Templated
+             .dtu_fdp_rdsr_sel_thr_e_l(`DTUPATH1.fcl_fdp_rdsr_sel_thr_e_l), // Templated
+             .ifu_exu_rd_ifusr_e  (`EXUPATH1.ifu_exu_rd_ifusr_e), // Templated
+             .ifu_exu_use_rsr_e_l (`EXUPATH1.ifu_exu_use_rsr_e_l), // Templated
+             .rml_irf_global_tid  (`EXUPATH1.irf.irf.rml_irf_global_tid[1:0]), // Templated
+             .ecl_irf_wen_w (`REGPATH1.ecl_irf_wen_w), // Templated
+             .ecl_irf_wen_w2  (`REGPATH1.ecl_irf_wen_w2), // Templated
+             .byp_irf_rd_data_w (`REGPATH1.byp_irf_rd_data_w[71:0]), // Templated
+             .byp_irf_rd_data_w2  (`REGPATH1.byp_irf_rd_data_w2[71:0]), // Templated
+             .thr_rd_w    (`REGPATH1.thr_rd_w[4:0]), // Templated
+             .thr_rd_w2   (`REGPATH1.thr_rd_w2[4:0]), // Templated
+             .ecl_irf_tid_w (`REGPATH1.ecl_irf_tid_w[1:0]), // Templated
+             .ecl_irf_tid_w2  (`REGPATH1.ecl_irf_tid_w2[1:0]), // Templated
+`ifndef RTL_SPU
+             .ifu_tlu_thrid_w (`SPCPATH1.ifu.ifu.fcl.sas_thrid_w[1:0]), // Templated
+`else
+             .ifu_tlu_thrid_w (`SPCPATH1.ifu.fcl.sas_thrid_w[1:0]), // Templated
+`endif
+             .wen_thr0_l    (`CCRPATH1.wen_thr0_l),  // Templated
+             .wen_thr1_l    (`CCRPATH1.wen_thr1_l),  // Templated
+             .wen_thr2_l    (`CCRPATH1.wen_thr2_l),  // Templated
+             .wen_thr3_l    (`CCRPATH1.wen_thr3_l),  // Templated
+             .ccrin_thr0    (`CCRPATH1.ccrin_thr0[7:0]), // Templated
+             .ccrin_thr1    (`CCRPATH1.ccrin_thr1[7:0]), // Templated
+             .ccrin_thr2    (`CCRPATH1.ccrin_thr2[7:0]), // Templated
+             .ccrin_thr3    (`CCRPATH1.ccrin_thr3[7:0]), // Templated
+             .cwp_thr0_next (`EXUPATH1.rml.cwp.cwp_thr0_next), // Templated
+             .cwp_thr1_next (`EXUPATH1.rml.cwp.cwp_thr1_next), // Templated
+             .cwp_thr2_next (`EXUPATH1.rml.cwp.cwp_thr2_next), // Templated
+             .cwp_thr3_next (`EXUPATH1.rml.cwp.cwp_thr3_next), // Templated
+             .cwp_wen_l   (`EXUPATH1.rml.cwp.cwp_wen_l[3:0]), // Templated
+             .next_cansave_w  (`EXUPATH1.rml.next_cansave_w[2:0]), // Templated
+             .cansave_wen_w (`EXUPATH1.rml.cansave_wen_w), // Templated
+             .next_canrestore_w (`EXUPATH1.rml.next_canrestore_w[2:0]), // Templated
+             .canrestore_wen_w  (`EXUPATH1.rml.canrestore_wen_w), // Templated
+             .next_otherwin_w (`EXUPATH1.rml.next_otherwin_w[2:0]), // Templated
+             .otherwin_wen_w  (`EXUPATH1.rml.otherwin_wen_w), // Templated
+             .tl_exu_tlu_wsr_data_w(`EXUPATH1.rml.exu_tlu_wsr_data_w[5:0]), // Templated
+             .ecl_rml_wstate_wen_w(`EXUPATH1.rml.wstate_wen_w), // Templated
+             .next_cleanwin_w (`EXUPATH1.rml.next_cleanwin_w[2:0]), // Templated
+             .cleanwin_wen_w  (`EXUPATH1.rml.cleanwin_wen_w), // Templated
+             .next_yreg_thr0  (`EXUPATH1.div.yreg.next_yreg_thr0[31:0]), // Templated
+             .next_yreg_thr1  (`EXUPATH1.div.yreg.next_yreg_thr1[31:0]), // Templated
+             .next_yreg_thr2  (`EXUPATH1.div.yreg.next_yreg_thr2[31:0]), // Templated
+             .next_yreg_thr3  (`EXUPATH1.div.yreg.next_yreg_thr3[31:0]), // Templated
+             .ecl_div_yreg_wen_l  (`EXUPATH1.ecl_div_yreg_wen_l[3:0]), // Templated
+             .ifu_tlu_wsr_inst_d  (`EXUPATH1.ifu_tlu_wsr_inst_d), // Templated
+             .ifu_tlu_sraddr_d  (`EXUPATH1.ifu_tlu_sraddr_d[3:0]), // Templated
+             .inst_done_w_for_sas (`PC_CMP.spc1_inst_done), // Templated
+`ifndef RTL_SPU
+             .ifu_tlu_pc_w  (`SPCPATH1.ifu.ifu.fdp.pc_w[47:0]), // Templated
+             .ifu_tlu_npc_w (`SPCPATH1.ifu.ifu.fdp.npc_w[47:0]), // Templated
+`else
+             .ifu_tlu_pc_w  (`SPCPATH1.ifu.fdp.pc_w[47:0]), // Templated
+             .ifu_tlu_npc_w (`SPCPATH1.ifu.fdp.npc_w[47:0]), // Templated
+`endif
+             .tl0_en    (`TLPATH1.tl0_en),   // Templated
+             .tl1_en    (`TLPATH1.tl1_en),   // Templated
+             .tl2_en    (`TLPATH1.tl2_en),   // Templated
+             .tl3_en    (`TLPATH1.tl3_en),   // Templated
+             .trp_lvl0_new  (`TLPATH1.trp_lvl0_new[2:0]), // Templated
+             .trp_lvl1_new  (`TLPATH1.trp_lvl1_new[2:0]), // Templated
+             .trp_lvl2_new  (`TLPATH1.trp_lvl2_new[2:0]), // Templated
+             .trp_lvl3_new  (`TLPATH1.trp_lvl3_new[2:0]), // Templated
+             .update_pstate0_w2 (`TLPATH1.update_pstate_w2[0]), // Templated
+             .update_pstate1_w2 (`TLPATH1.update_pstate_w2[1]), // Templated
+             .update_pstate2_w2 (`TLPATH1.update_pstate_w2[2]), // Templated
+             .update_pstate3_w2 (`TLPATH1.update_pstate_w2[3]), // Templated
+             .pstate_priv_update_w2(`TDPPATH1.pstate_priv_update_w2), // Templated
+             .hpstate_priv_update_w2(`TDPPATH1.hpstate_priv_update_w2), // Templated
+             .restore_pstate0 (`TDPPATH1.restore_pstate0), // Templated
+             .restore_pstate1 (`TDPPATH1.restore_pstate1), // Templated
+             .restore_pstate2 (`TDPPATH1.restore_pstate2), // Templated
+             .restore_pstate3 (`TDPPATH1.restore_pstate3), // Templated
+             .tick0_en    (`TLPATH1.tick_en[0]),   // Templated
+             .tick1_en    (`TLPATH1.tick_en[1]),   // Templated
+             .tick2_en    (`TLPATH1.tick_en[2]),   // Templated
+             .tick3_en    (`TLPATH1.tick_en[3]),   // Templated
+             .exu_tlu_wsr_data_w  (`TDPPATH1.tlu_wsr_data_w[63:0]), // Templated
+             .tba0_en   (`TLPATH1.tlu_tba_en_l[0]), // Templated
+             .tba1_en   (`TLPATH1.tlu_tba_en_l[1]), // Templated
+             .tba2_en   (`TLPATH1.tlu_tba_en_l[2]), // Templated
+             .tba3_en   (`TLPATH1.tlu_tba_en_l[3]), // Templated
+             .tsa_wr_vld    (`TLPATH1.tsa_wr_vld[1:0]), // Templated
+             .tsa_pc_en   (`TLPATH1.tsa_pc_en),  // Templated
+             .tsa_npc_en    (`TLPATH1.tsa_npc_en),   // Templated
+             .tsa_tstate_en (`TLPATH1.tsa_tstate_en), // Templated
+             .tsa_ttype_en  (`TLPATH1.tsa_ttype_en), // Templated
+             .tsa_wr_tid    (`TLPATH1.tsa_wr_tid[1:0]), // Templated
+             .tsa_wr_tpl    (`TLPATH1.tsa_wr_tpl[2:0]), // Templated
+             // .temp_tlvl0    (`TS0PATH1.temp_tlvl),   // Templated
+             .temp_tlvl0    (),   // Templated
+             .tsa0_wdata    (`TS0PATH1.din),   // Templated
+             .write_mask0   (`TS0PATH1.write_mask),  // Templated
+             //.temp_tlvl1    (`TS1PATH1.temp_tlvl),   // Templated
+             .temp_tlvl1    (),   // Templated
+             .tsa1_wdata    (`TS1PATH1.din),   // Templated
+             .write_mask1   (`TS1PATH1.write_mask),  // Templated
+             .cpu_id    (10'd1),       // Templated
+             .next_t0_inrr_i1 (`INTPATH1.next_t0_inrr_i1[63:0]), // Templated
+             .next_t1_inrr_i1 (`INTPATH1.next_t1_inrr_i1[63:0]), // Templated
+             .next_t2_inrr_i1 (`INTPATH1.next_t2_inrr_i1[63:0]), // Templated
+             .next_t3_inrr_i1 (`INTPATH1.next_t3_inrr_i1[63:0]), // Templated
+             .ifu_lsu_st_inst_e (`SPCPATH1.ifu_lsu_st_inst_e), // Templated
+             .ifu_lsu_ld_inst_e (`SPCPATH1.ifu_lsu_ld_inst_e), // Templated
+             .ifu_lsu_alt_space_e (`PCXPATH1.ifu_lsu_alt_space_e), // Templated
+             .ifu_lsu_ldst_fp_e (`PCXPATH1.ifu_lsu_ldst_fp_e), // Templated
+             .ifu_lsu_ldst_dbl_e  (`PCXPATH1.ifu_lsu_ldst_dbl_e), // Templated
+             .lsu_ffu_blk_asi_e (`PCXPATH1.lsu_ffu_blk_asi_e), // Templated
+             .ifu_tlu_inst_vld_m  (`PCXPATH1.ifu_tlu_inst_vld_m), // Templated
+             .ifu_lsu_swap_e  (`SPCPATH1.ifu_lsu_swap_e), // Templated
+             .ifu_tlu_thrid_e (`SPCPATH1.ifu_tlu_thrid_e[1:0]), // Templated
+             .asi_wr_din    (`ASIDPPATH1.asi_wr_din), // Templated
+             .asi_state_wr_thrd (`ASIDPPATH1.asi_state_wr_thrd[3:0]), // Templated
+             .pil     (`TLPATH1.tlu_wsr_data_w[3:0]), // Templated
+             .pil0_en   (`TLPATH1.pil0_en),  // Templated
+             .pil1_en   (`TLPATH1.pil1_en),  // Templated
+             .pil2_en   (`TLPATH1.pil2_en),  // Templated
+             .pil3_en   (`TLPATH1.pil3_en),  // Templated
+             .dp_frf_data   (`FLOATPATH1.dp_frf_data[70:0]), // Templated
+             .ctl_frf_addr  (`FLOATPATH1.ctl_frf_addr[6:0]), // Templated
+             .ctl_frf_wen   (`FLOATPATH1.ctl_frf_wen[1:0]), // Templated
+             .regfile_index (`FLOATPATH1.frf.regfile_index[7:0]), // Templated
+             .ifu_exu_rs1_s (`EXUPATH1.ifu_exu_rs1_s[4:0]), // Templated
+             .ifu_exu_rs2_s (`EXUPATH1.ifu_exu_rs2_s[4:0]), // Templated
+             .byp_alu_rs1_data_e  (`EXUPATH1.byp_alu_rs1_data_e[63:0]), // Templated
+             .byp_alu_rs2_data_e  (`EXUPATH1.byp_alu_rs2_data_e[63:0]), // Templated
+             .ifu_lsu_imm_asi_d (`SPCPATH1.ifu_lsu_imm_asi_d[7:0]), // Templated
+             .ifu_lsu_imm_asi_vld_d(`SPCPATH1.ifu_lsu_imm_asi_vld_d), // Templated
+             .ifu_tlu_itlb_done (`SPCPATH1.ifu_tlu_itlb_done), // Templated
+             .tlu_itlb_wr_vld_g (`SPCPATH1.tlu_itlb_wr_vld_g), // Templated
+             .tlu_itlb_dmp_vld_g  (`SPCPATH1.tlu_itlb_dmp_vld_g), // Templated
+             .lsu_tlu_dtlb_done (`SPCPATH1.lsu_tlu_dtlb_done), // Templated
+             .tlu_dtlb_wr_vld_g (`TLUPATH1.mmu_ctl.pre_dtlb_wr_vld_g), // Templated
+             .tlu_dtlb_dmp_vld_g  (`SPCPATH1.tlu_dtlb_dmp_vld_g), // Templated
+             .tlu_idtlb_dmp_thrid_g(`SPCPATH1.tlu_idtlb_dmp_thrid_g[1:0]), // Templated
+             .inst_vld_qual_e (`INSTPATH1.inst_vld_qual_e), // Templated
+             .t0_inrr_i2    (`TLUPATH1.intdp.t0_inrr_i2[63:0]), // Templated
+             .t1_inrr_i2    (`TLUPATH1.intdp.t1_inrr_i2[63:0]), // Templated
+             .t2_inrr_i2    (`TLUPATH1.intdp.t2_inrr_i2[63:0]), // Templated
+             .t3_inrr_i2    (`TLUPATH1.intdp.t3_inrr_i2[63:0]), // Templated
+             .t0_indr   (`TLUPATH1.intdp.t0_indr[10:0]), // Templated
+             .t1_indr   (`TLUPATH1.intdp.t1_indr[10:0]), // Templated
+             .t2_indr   (`TLUPATH1.intdp.t2_indr[10:0]), // Templated
+             .t3_indr   (`TLUPATH1.intdp.t3_indr[10:0]), // Templated
+             .ttype_sel_hstk_cmp_e(`INSTPATH1.ttype_sel_hstk_cmp_e), // Templated
+             .ifu_tlu_ttype_vld_m (`INSTPATH1.ifu_tlu_ttype_vld_m)); // Templated
+`endif // ifdef RTL_SPARC1
+
+
+
 
 `endif // SAS_DISABLE
 // asdf;
@@ -853,6 +1353,120 @@ task mra_val;
     `endif
 
 
+    `ifdef RTL_SPARC1
+               10'd1 : begin
+    `ifndef PITON_PROTO
+    `ifdef FPGA_SYN_16x160
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr0.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr0.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr0.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr0.inq_ary3, tmp[7:6]);
+                    mra_wdata[7:0] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr1.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr1.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr1.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr1.inq_ary3, tmp[7:6]);
+                    mra_wdata[15:8] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr2.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr2.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr2.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr2.inq_ary3, tmp[7:6]);
+                    mra_wdata[23:16] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr3.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr3.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr3.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr3.inq_ary3, tmp[7:6]);
+                    mra_wdata[31:24] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr4.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr4.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr4.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr4.inq_ary3, tmp[7:6]);
+                    mra_wdata[39:32] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr5.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr5.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr5.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr5.inq_ary3, tmp[7:6]);
+                    mra_wdata[47:40] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr6.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr6.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr6.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr6.inq_ary3, tmp[7:6]);
+                    mra_wdata[55:48] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr7.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr7.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr7.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr7.inq_ary3, tmp[7:6]);
+                    mra_wdata[63:56] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr8.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr8.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr8.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr8.inq_ary3, tmp[7:6]);
+                    mra_wdata[71:64] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr9.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr9.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr9.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr9.inq_ary3, tmp[7:6]);
+                    mra_wdata[79:72] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr10.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr10.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr10.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr10.inq_ary3, tmp[7:6]);
+                    mra_wdata[87:80] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr11.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr11.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr11.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr11.inq_ary3, tmp[7:6]);
+                    mra_wdata[95:88] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr12.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr12.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr12.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr12.inq_ary3, tmp[7:6]);
+                    mra_wdata[103:96] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr13.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr13.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr13.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr13.inq_ary3, tmp[7:6]);
+                    mra_wdata[111:104] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr14.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr14.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr14.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr14.inq_ary3, tmp[7:6]);
+                    mra_wdata[119:112] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr15.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr15.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr15.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr15.inq_ary3, tmp[7:6]);
+                    mra_wdata[127:120] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr16.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr16.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr16.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr16.inq_ary3, tmp[7:6]);
+                    mra_wdata[135:128] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr17.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr17.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr17.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr17.inq_ary3, tmp[7:6]);
+                    mra_wdata[143:136] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr18.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr18.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr18.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr18.inq_ary3, tmp[7:6]);
+                    mra_wdata[151:144] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr19.inq_ary0, tmp[1:0]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr19.inq_ary1, tmp[3:2]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr19.inq_ary2, tmp[5:4]);
+                    $bw_force_by_name(2, idx, `TLUPATH1.mra.arr19.inq_ary3, tmp[7:6]);
+                    mra_wdata[159:152] = {tmp[7],tmp[5],tmp[3],tmp[1],tmp[6],tmp[4],tmp[2],tmp[0]};
+        `else
+            $bw_force_by_name(2, idx, `TLUPATH1.mra.inq_ary, mra_wdata);
+        `endif
+    `else
+    $bw_force_by_name(2, idx, `TLUPATH1.mra.inq_ary, mra_wdata);
+    `endif // PITON_PROTO
+                end
+    `endif
+
+
 
             default: begin
             end
@@ -881,6 +1495,11 @@ always @(posedge clk)begin
         
      `ifdef RTL_SPARC0
     `SAS_TASKS.task0.process;
+      `endif
+
+
+     `ifdef RTL_SPARC1
+    `SAS_TASKS.task1.process;
       `endif
 
 

@@ -1761,6 +1761,20 @@ ciop_fake_iob ciop_fake_iob(
 `endif
 
 
+`ifdef RTL_SPARC1
+  .spc1_inst_done    (`TOP_MOD.monitor.pc_cmp.spc1_inst_done),
+  .pc_w1             (`PCPATH1.fdp.pc_w),
+`endif
+`ifdef RTL_PICO1
+  .spc1_inst_done    (1'b1),
+  .pc_w1             ({17'b0, `PICO_CORE1.reg_pc}),
+`endif
+`ifdef RTL_ARIANE1
+  .spc1_inst_done    ( `ARIANE_CORE1.piton_pc_vld   ),
+  .pc_w1             ( `ARIANE_CORE1.piton_pc[48:0] ),
+`endif
+
+
     .clk               (chipset_clk),
     .rst_n             (chipset_rst_n)
 //    .rst_n             (`SPARC_CORE0.reset_l)

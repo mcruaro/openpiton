@@ -43,6 +43,15 @@ extern void setStats(int enable);
 // instantiation macros for atomic memory operation (non LR/SC)
 // see also
 // https://github.com/torvalds/linux/blob/ef78e5ec9214376c5cb989f5da70b02d0c117b66/arch/riscv/include/asm/atomic.h#L94
+
+/*
+Perform the expression fech and op
+'asm_op' = swap, add, and, or, xor, max(u)
+address 'mem' = address of the variable
+i' = value used in the 'asm_op' 
+'ret' = previous value of the variable at address 'mem'
+*/
+
 #define ATOMIC_FETCH_OP(ret, mem, i, asm_op, asm_type) \
   __asm__ __volatile__ (                               \
     " amo" #asm_op "." #asm_type " %1, %2, %0"         \
@@ -50,6 +59,19 @@ extern void setStats(int enable);
     : "r" (i)                                          \
     : "memory");
 
+
+/* 
+
+:"=r"(b)        output 
+:"r"(a)         input 
+:"+A"         address of read/write operation
+            
+/*
+Perform the expression fech and op
+'asm_op' = swap, add, and, or, xor, max(u)
+address 'mem' = address of the variable
+i' = value used in the 'asm_op' 
+*/
 #define ATOMIC_OP(mem, i, asm_op, asm_type)      \
   __asm__ __volatile__ (                         \
     " amo" #asm_op "." #asm_type " zero, %1, %0" \
@@ -57,6 +79,29 @@ extern void setStats(int enable);
     : "r" (i)                                    \
     : "memory");
 
+
+
+/*
+load linked (LL) and store conditional (SC) instructions are a way to achieve 
+atomic memory updates in shared memory multiprocessor systems, without locking 
+memory locations for exclusive access by one processor.
+
+The idea is that you use LL to load the value stored at a memory location into 
+a register, modify it however you like there, and subsequently write it back to 
+the same place using SC. SC will only overwrite the value in memory with your modified 
+one if no other processor has altered it while you were working on the copy in the 
+register. It has the side-effect of setting a status flag to indicate whether or not 
+it was successful.
+
+When the updated value is successfully stored, a thread can trust that its 
+read-modify-write sequence was completed without interference from other threads. 
+On a failure, it is up to the program to decide whether to give up or reload the address 
+and try again, but at least it doesn't produce an undetected Race condition.
+*/
+/*
+Loads value of address 'mem' into register 'ret'
+asm_type = w
+*/
 #define LR_OP(ret, mem, asm_type)               \
   __asm__ __volatile__ (                        \
     " lr." #asm_type " %1, %0"                  \
@@ -64,6 +109,11 @@ extern void setStats(int enable);
     :                                           \
     : "memory");
 
+
+/*
+Stores the value of 'i' in address 'mem'
+ret=0 - fail, ret = 1 - success
+*/
 #define SC_OP(ret, mem, i, asm_type)            \
   __asm__ __volatile__ (                        \
     " sc." #asm_type " %1, %2, %0"              \

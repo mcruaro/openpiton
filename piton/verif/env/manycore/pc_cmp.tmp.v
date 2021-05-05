@@ -38,17 +38,17 @@ input rst_l;
 // trap register
 
 `ifndef VERILATOR
-reg [3:0]   finish_mask;
+reg [7:0]   finish_mask;
 `else
 integer      finish_mask;
 `endif
-reg [3:0]   diag_mask;
-reg [3:0]   active_thread;
-reg [3:0]   back_thread, good_delay;
-reg [3:0]   good, good_for;
-reg [4:0]    thread_status[3:0];
-reg [0:0]   done;
-reg [31:0]     timeout [3:0];
+reg [7:0]   diag_mask;
+reg [7:0]   active_thread;
+reg [7:0]   back_thread, good_delay;
+reg [7:0]   good, good_for;
+reg [4:0]    thread_status[7:0];
+reg [1:0]   done;
+reg [31:0]     timeout [7:0];
 
 
 reg [39:0]    good_trap[`GOOD_TRAP_COUNTER-1:0];
@@ -68,6 +68,14 @@ integer       max, time_tmp, trap_count;
     wire [63:0]      spc0_rtl_pc;
     wire sas_m0;
     reg [63:0] spc0_phy_pc_w;
+
+    
+
+    reg spc1_inst_done;
+    wire [1:0]   spc1_thread_id;
+    wire [63:0]      spc1_rtl_pc;
+    wire sas_m1;
+    reg [63:0] spc1_phy_pc_w;
 
     
 
@@ -107,6 +115,10 @@ task get_thread_status;
 thread_status[1] = `IFUPATH0.swl.thr1_state;
 thread_status[2] = `IFUPATH0.swl.thr2_state;
 thread_status[3] = `IFUPATH0.swl.thr3_state;
+thread_status[4] = `IFUPATH1.swl.thr0_state;
+thread_status[5] = `IFUPATH1.swl.thr1_state;
+thread_status[6] = `IFUPATH1.swl.thr2_state;
+thread_status[7] = `IFUPATH1.swl.thr3_state;
 
     end
 endtask // get_thread_status
@@ -240,6 +252,135 @@ endtask // get_thread_status
     `endif // RTL_PICO0
     `endif // RTL_ARIANE0
     `endif // RTL_SPARC0
+    
+
+    `ifdef RTL_SPARC1
+    `ifdef GATE_SIM_SPARC
+        assign sas_m1                = `INSTPATH1.runw_ff_u_dff_0_.d &
+               (~`INSTPATH1.exu_ifu_ecc_ce_m | `INSTPATH1.trapm_ff_u_dff_0_.q);
+        assign spc1_thread_id        = {`PCPATH1.ifu_fcl.thrw_reg_q_tmp_3_ | `PCPATH1.ifu_fcl.thrw_reg_q_tmp_2_,
+                                        `PCPATH1.ifu_fcl.thrw_reg_q_tmp_3_ | `PCPATH1.ifu_fcl.thrw_reg_q_tmp_1_};
+        assign spc1_rtl_pc           = `SPCPATH1.ifu_fdp.pc_w[47:0];
+    `else
+        assign sas_m1                = `INSTPATH1.inst_vld_m       & ~`INSTPATH1.kill_thread_m &
+               ~(`INSTPATH1.exu_ifu_ecc_ce_m & `INSTPATH1.inst_vld_m & ~`INSTPATH1.trap_m);
+        assign spc1_thread_id        = `PCPATH1.fcl.sas_thrid_w;
+    `ifndef RTL_SPU
+            assign spc1_rtl_pc           = `SPCPATH1.ifu.ifu.fdp.pc_w[47:0];
+    `else
+            assign spc1_rtl_pc           = `SPCPATH1.ifu.fdp.pc_w[47:0];
+    `endif
+    `endif // ifdef GATE_SIM_SPARC
+
+            reg [63:0] spc1_phy_pc_d,  spc1_phy_pc_e,  spc1_phy_pc_m,
+                spc1_t0pc_s,    spc1_t1pc_s,    spc1_t2pc_s,  spc1_t3pc_s ;
+
+            reg [3:0]  spc1_fcl_fdp_nextpcs_sel_pcf_f_l_e,
+                spc1_fcl_fdp_nextpcs_sel_pcs_f_l_e,
+                spc1_fcl_fdp_nextpcs_sel_pcd_f_l_e,
+                spc1_fcl_fdp_nextpcs_sel_pce_f_l_e;
+
+            wire [3:0] pcs1 = spc1_fcl_fdp_nextpcs_sel_pcs_f_l_e;
+            wire [3:0] pcf1 = spc1_fcl_fdp_nextpcs_sel_pcf_f_l_e;
+            wire [3:0] pcd1 = spc1_fcl_fdp_nextpcs_sel_pcd_f_l_e;
+            wire [3:0] pce1 = spc1_fcl_fdp_nextpcs_sel_pce_f_l_e;
+
+            wire [63:0]  spc1_imiss_paddr_s ;
+
+    `ifdef  GATE_SIM_SPARC
+            assign spc1_imiss_paddr_s = {`IFQDP1.itlb_ifq_paddr_s, `IFQDP1.lcl_paddr_s, 2'b0} ;
+    `else
+            assign spc1_imiss_paddr_s = `IFQDP1.imiss_paddr_s ;
+    `endif // GATE_SIM_SPARC
+
+
+
+            always @(posedge clk) begin
+                //done
+                spc1_inst_done                     <= sas_m1;
+
+                //next pc select
+                spc1_fcl_fdp_nextpcs_sel_pcs_f_l_e <= `DTUPATH1.fcl_fdp_nextpcs_sel_pcs_f_l;
+                spc1_fcl_fdp_nextpcs_sel_pcf_f_l_e <= `DTUPATH1.fcl_fdp_nextpcs_sel_pcf_f_l;
+                spc1_fcl_fdp_nextpcs_sel_pcd_f_l_e <= `DTUPATH1.fcl_fdp_nextpcs_sel_pcd_f_l;
+                spc1_fcl_fdp_nextpcs_sel_pce_f_l_e <= `DTUPATH1.fcl_fdp_nextpcs_sel_pce_f_l;
+
+                //pipe physical pc
+
+                if(pcf1[0] == 0)spc1_t0pc_s          <= spc1_imiss_paddr_s;
+                else if(pcs1[0] == 0)spc1_t0pc_s     <= spc1_t0pc_s;
+                else if(pcd1[0] == 0)spc1_t0pc_s     <= spc1_phy_pc_e;
+                else if(pce1[0] == 0)spc1_t0pc_s     <= spc1_phy_pc_m;
+
+                if(pcf1[1] == 0)spc1_t1pc_s          <= spc1_imiss_paddr_s;
+                else if(pcs1[1] == 0)spc1_t1pc_s     <= spc1_t1pc_s;
+                else if(pcd1[1] == 0)spc1_t1pc_s     <= spc1_phy_pc_e;
+                else if(pce1[1] == 0)spc1_t1pc_s     <= spc1_phy_pc_m;
+
+                if(pcf1[2] == 0)spc1_t2pc_s          <= spc1_imiss_paddr_s;
+                else if(pcs1[2] == 0)spc1_t2pc_s     <= spc1_t2pc_s;
+                else if(pcd1[2] == 0)spc1_t2pc_s     <= spc1_phy_pc_e;
+                else if(pce1[2] == 0)spc1_t2pc_s     <= spc1_phy_pc_m;
+
+                if(pcf1[3] == 0)spc1_t3pc_s          <= spc1_imiss_paddr_s;
+                else if(pcs1[3] == 0)spc1_t3pc_s     <= spc1_t3pc_s;
+                else if(pcd1[3] == 0)spc1_t3pc_s     <= spc1_phy_pc_e;
+                else if(pce1[3] == 0)spc1_t3pc_s     <= spc1_phy_pc_m;
+
+                if(~`DTUPATH1.fcl_fdp_thr_s2_l[0])     spc1_phy_pc_d <= pcf1[0] ? spc1_t0pc_s : spc1_imiss_paddr_s;
+                else if(~`DTUPATH1.fcl_fdp_thr_s2_l[1])spc1_phy_pc_d <= pcf1[1] ? spc1_t1pc_s : spc1_imiss_paddr_s;
+                else if(~`DTUPATH1.fcl_fdp_thr_s2_l[2])spc1_phy_pc_d <= pcf1[2] ? spc1_t2pc_s : spc1_imiss_paddr_s;
+                else if(~`DTUPATH1.fcl_fdp_thr_s2_l[3])spc1_phy_pc_d <= pcf1[3] ? spc1_t3pc_s : spc1_imiss_paddr_s;
+
+                spc1_phy_pc_e   <= spc1_phy_pc_d;
+                spc1_phy_pc_m   <= spc1_phy_pc_e;
+                spc1_phy_pc_w   <= {{8{spc1_phy_pc_m[39]}}, spc1_phy_pc_m[39:0]};
+            end
+    `else // RTL_SPARC1
+    `ifdef RTL_ARIANE0
+            assign spc1_thread_id = 2'b00;
+            assign spc1_rtl_pc = spc1_phy_pc_w;
+
+            always @(posedge clk) begin
+                if (~rst_l) begin
+                  active_thread[(1*4)]   <= 1'b0;
+                  active_thread[(1*4)+1] <= 1'b0;
+                  active_thread[(1*4)+2] <= 1'b0;
+                  active_thread[(1*4)+3] <= 1'b0;
+                  spc1_inst_done         <= 0;
+                  spc1_phy_pc_w          <= 0;
+                end else begin
+                  active_thread[(1*4)]   <= 1'b1;
+                  active_thread[(1*4)+1] <= 1'b1;
+                  active_thread[(1*4)+2] <= 1'b1;
+                  active_thread[(1*4)+3] <= 1'b1;
+                  spc1_inst_done         <= `ARIANE_CORE1.piton_pc_vld;
+                  spc1_phy_pc_w          <= `ARIANE_CORE1.piton_pc;
+                end
+            end
+    `else // RTL_ARIANE0
+    `ifdef RTL_PICO0
+            assign spc1_thread_id = 2'b00;
+            assign spc1_rtl_pc = spc1_phy_pc_w;
+
+            always @*
+            begin
+                if (`PICO_CORE1.pico_int == 1'b1)
+                begin
+                    active_thread[(1*4)] = 1'b1;
+                    active_thread[(1*4)+1] = 1'b1;
+                    active_thread[(1*4)+2] = 1'b1;
+                    active_thread[(1*4)+3] = 1'b1;
+                end
+            end
+
+            always @(posedge clk) begin
+                spc1_inst_done <= `PICO_CORE1.launch_next_insn;
+                spc1_phy_pc_w <= {{16{`PICO_CORE1.reg_pc[31]}}, `PICO_CORE1.reg_pc[31:0]};
+            end
+    `endif // RTL_PICO0
+    `endif // RTL_ARIANE0
+    `endif // RTL_SPARC1
     
 
 
@@ -757,9 +898,13 @@ endtask
     wire[31:0] long_cpuid0;
     assign long_cpuid0 = {30'd0, spc0_thread_id};
 
+    wire[31:0] long_cpuid1;
+    assign long_cpuid1 = {30'd1, spc1_thread_id};
+
 
 always @* begin
 done[0]   = spc0_inst_done;//sparc 0
+done[1]   = spc1_inst_done;//sparc 1
 
 
 end
@@ -1818,12 +1963,1060 @@ if(good_trap_exists[31] & (good_trap[31] == spc0_phy_pc_w[39:0]))
             end // if (active_thread[long_cpuid0])
         end // if (done[0])
 
+        if (done[1]) begin
+            timeout[long_cpuid1] = 0;
+            //check_bad_trap(spc1_phy_pc_w, 1, long_cpuid1);
+            if(active_thread[long_cpuid1])begin
+
+                if(bad_trap_exists[0] & (bad_trap[0] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 0 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[1] & (bad_trap[1] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 1 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[2] & (bad_trap[2] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 2 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[3] & (bad_trap[3] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 3 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[4] & (bad_trap[4] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 4 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[5] & (bad_trap[5] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 5 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[6] & (bad_trap[6] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 6 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[7] & (bad_trap[7] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 7 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[8] & (bad_trap[8] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 8 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[9] & (bad_trap[9] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 9 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[10] & (bad_trap[10] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 10 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[11] & (bad_trap[11] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 11 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[12] & (bad_trap[12] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 12 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[13] & (bad_trap[13] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 13 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[14] & (bad_trap[14] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 14 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[15] & (bad_trap[15] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 15 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[16] & (bad_trap[16] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 16 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[17] & (bad_trap[17] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 17 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[18] & (bad_trap[18] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 18 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[19] & (bad_trap[19] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 19 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[20] & (bad_trap[20] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 20 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[21] & (bad_trap[21] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 21 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[22] & (bad_trap[22] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 22 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[23] & (bad_trap[23] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 23 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[24] & (bad_trap[24] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 24 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[25] & (bad_trap[25] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 25 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[26] & (bad_trap[26] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 26 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[27] & (bad_trap[27] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 27 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[28] & (bad_trap[28] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 28 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[29] & (bad_trap[29] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 29 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[30] & (bad_trap[30] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 30 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+                if(bad_trap_exists[31] & (bad_trap[31] == spc1_phy_pc_w))begin
+                    hit_bad     = 1'b1;
+                    good[long_cpuid1]     = 1;
+                    local_diag_done = 1;
+                    $display("%0d: Info - > Hit Bad trap. spc(%0d) thread(%0d)", $time, 1, 31 % 4);
+                    `MONITOR_PATH.fail("HIT BAD TRAP");
+                end
+
+            end
+        if (active_thread[long_cpuid1]) begin
+    
+if(good_trap_exists[0] & (good_trap[0] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[1] & (good_trap[1] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[2] & (good_trap[2] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[3] & (good_trap[3] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[4] & (good_trap[4] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[5] & (good_trap[5] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[6] & (good_trap[6] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[7] & (good_trap[7] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[8] & (good_trap[8] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[9] & (good_trap[9] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[10] & (good_trap[10] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[11] & (good_trap[11] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[12] & (good_trap[12] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[13] & (good_trap[13] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[14] & (good_trap[14] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[15] & (good_trap[15] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[16] & (good_trap[16] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[17] & (good_trap[17] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[18] & (good_trap[18] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[19] & (good_trap[19] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[20] & (good_trap[20] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[21] & (good_trap[21] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[22] & (good_trap[22] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[23] & (good_trap[23] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[24] & (good_trap[24] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[25] & (good_trap[25] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[26] & (good_trap[26] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[27] & (good_trap[27] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[28] & (good_trap[28] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[29] & (good_trap[29] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[30] & (good_trap[30] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+if(good_trap_exists[31] & (good_trap[31] == spc1_phy_pc_w[39:0]))
+                begin
+                    if(good[long_cpuid1] == 0)
+                        $display("Info: spc(%0x) thread(%0x) Hit Good trap", long_cpuid1 / 4, long_cpuid1 % 4);
+
+                    //post-silicon debug
+                    if(finish_mask[long_cpuid1])
+                    begin
+                        if(good_flag)
+                        begin
+                            if(!hitted[long_cpuid1])
+                            begin
+                                last_hit[long_cpuid1] = spc1_phy_pc_w[39:0];
+                                hitted[long_cpuid1]   = 1;
+                            end
+                            else if(last_hit[long_cpuid1] == spc1_phy_pc_w[39:0])
+                                good[long_cpuid1] = 1'b1;
+                        end
+                        else
+                        begin
+                            good[long_cpuid1] = 1'b1;
+                        end
+                    end
+                end
+
+                if((good == finish_mask) &&
+                   (hit_bad == 0)        &&
+                   (stub_mask == stub_good))
+                begin
+                    local_diag_done = 1;
+                    `ifndef VERILATOR
+                    @(posedge clk);
+                    `endif
+                    $display("%0d: Simulation -> PASS (HIT GOOD TRAP)", $time);
+                    $finish;
+                end
+            end // if (active_thread[long_cpuid1])
+        end // if (done[1])
+
         
         end
 `ifdef INCLUDE_SAS_TASKS
         get_thread_status;
 `endif
         if(active_thread[3:0])check_time(0, 4);
+if(active_thread[7:4])check_time(4, 8);
 
 
         set_diag_done(local_diag_done);

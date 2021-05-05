@@ -51,8 +51,8 @@
 // Tile config
 
 // /home/ruaro/openpiton/piton/verif/env/manycore/devices_ariane.xml
-`define NUM_TILES 1
-`define X_TILES 1
+`define NUM_TILES 2
+`define X_TILES 2
 `define Y_TILES 1
 
 

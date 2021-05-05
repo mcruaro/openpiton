@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `include "network_define.v"
 // /home/ruaro/openpiton/piton/verif/env/manycore/devices_ariane.xml
 
-module dynamic_output_datapath_para(data_out, valid_out_temp, data_0_in, data_1_in, valid_0_in, valid_1_in, current_route_in);
+module dynamic_output_datapath_para(data_out, valid_out_temp, data_0_in, data_1_in, data_2_in, valid_0_in, valid_1_in, valid_2_in, current_route_in);
 
 // begin port declarations
 
@@ -44,10 +44,12 @@ output [`DATA_WIDTH-1:0] data_out;
 output valid_out_temp;
 input [`DATA_WIDTH-1:0] data_0_in;
 input [`DATA_WIDTH-1:0] data_1_in;
+input [`DATA_WIDTH-1:0] data_2_in;
 input valid_0_in;
 input valid_1_in;
+input valid_2_in;
 
-input [0:0] current_route_in;
+input [1:0] current_route_in;
 
 // end port declarations
 
@@ -71,7 +73,7 @@ input [0:0] current_route_in;
 
 //instantiations
 
-one_of_n #(`DATA_WIDTH) data_mux(.in0(data_0_in), .in1(data_1_in), .sel(current_route_in), .out(data_out));
-one_of_n #(1) valid_mux(.in0(valid_0_in), .in1(valid_1_in), .sel(current_route_in), .out(valid_out_temp));
+one_of_n #(`DATA_WIDTH) data_mux(.in0(data_0_in), .in1(data_1_in), .in2(data_2_in), .sel(current_route_in), .out(data_out));
+one_of_n #(1) valid_mux(.in0(valid_0_in), .in1(valid_1_in), .in2(valid_2_in), .sel(current_route_in), .out(valid_out_temp));
 
 endmodule

@@ -190,6 +190,112 @@
     `define CFG_ASI_PATH0    `SPARC_CORE0.sparc0.cfg_asi
     
 
+    `define TILE1            `CHIP.tile1
+    `define ARIANE_CORE1     `TILE1.g_ariane_core.core.ariane
+    `define SPARC_CORE1      `TILE1.g_sparc_core.core
+    `define PICO_CORE1       `TILE1.g_picorv32_core.core
+    `ifdef RTL_SPARC1
+    `define CORE_REF1        `SPARC_CORE1
+    `endif // ifdef RTL_SPARC1
+    `ifdef RTL_ARIANE1
+    `define CORE_REF1        `TILE1.g_ariane_core.core
+    `endif // ifdef RTL_ARIANE1
+    `ifdef RTL_PICO1
+    `define CORE_REF1        `PICO_CORE1
+    `endif // ifdef RTL_PICO1
+    `define CCX_TRANSDUCER1  `TILE1.g_sparc_core.ccx_l15_transducer
+    `define PICO_TRANSDUCER1 `TILE1.g_picorv32_core.pico_l15_transducer
+    `define L15_TOP1         `TILE1.l15.l15
+    `define L15_PIPE1        `TILE1.l15.l15.pipeline
+    `define DMBR1            `TILE1.dmbr_ins
+    `define L2_TOP1          `TILE1.l2
+    `define SPARC_REG1       `SPARC_CORE1.sparc0.exu.exu.irf.irf
+`ifndef RTL_SPU
+    `define FLOATPATH1       `SPARC_CORE1.sparc0.ffu.ffu
+`else
+    `define FLOATPATH1       `SPARC_CORE1.sparc0.ffu
+`endif
+`ifndef RTL_SPU
+    `define TLUPATH1         `SPARC_CORE1.sparc0.tlu.tlu
+    `define DTLBPATH1        `SPARC_CORE1.sparc0.lsu.lsu.dtlb
+`else
+    `define TLUPATH1         `SPARC_CORE1.sparc0.tlu
+    `define DTLBPATH1        `SPARC_CORE1.sparc0.lsu.dtlb
+`endif
+`ifndef RTL_SPU
+    `define LSU_PATH sparc0.lsu.lsu
+`else
+    `define LSU_PATH sparc0.lsu
+`endif
+    `define PCXPATH1         `SPARC_CORE1.sparc0
+`ifndef RTL_SPU
+    `define ICVPATH1         `SPARC_CORE1.sparc0.ifu.ifu.icv
+    `define IFUPATH1         `SPARC_CORE1.sparc0.ifu.ifu
+    `define TNUM1S           `SPARC_CORE1.sparc0.ifu.ifu.swl
+    `define TPC1S            `SPARC_CORE1.sparc0.ifu.ifu.fdp
+`else
+    `define ICVPATH1         `SPARC_CORE1.sparc0.ifu.icv
+    `define IFUPATH1         `SPARC_CORE1.sparc0.ifu
+    `define TNUM1S           `SPARC_CORE1.sparc0.ifu.swl
+    `define TPC1S            `SPARC_CORE1.sparc0.ifu.fdp
+`endif
+`ifndef RTL_SPU
+    `define TDPPATH1         `SPARC_CORE1.sparc0.tlu.tlu.tdp
+`else
+    `define TDPPATH1         `SPARC_CORE1.sparc0.tlu.tdp
+`endif
+`ifndef RTL_SPU
+    `define DTUPATH1         `SPARC_CORE1.sparc0.ifu.ifu.fdp
+`else
+    `define DTUPATH1         `SPARC_CORE1.sparc0.ifu.fdp
+`endif
+    `define ALUPATH1         `SPARC_CORE1.sparc0.exu.exu.alu
+    `define SPCPATH1         `SPARC_CORE1.sparc0
+    `define REGPATH1         `SPARC_CORE1.sparc0.exu.exu.irf.irf
+    `define CCRPATH1         `SPARC_CORE1.sparc0.exu.exu.ecl.ccr
+    `define EXUPATH1         `SPARC_CORE1.sparc0.exu.exu
+`ifndef RTL_SPU
+    `define TLPATH1          `SPARC_CORE1.sparc0.tlu.tlu.tcl
+    `define TS0PATH1         `SPARC_CORE1.sparc0.tlu.tlu.tsa0
+    `define TS1PATH1         `SPARC_CORE1.sparc0.tlu.tlu.tsa1
+    `define INTPATH1         `SPARC_CORE1.sparc0.tlu.tlu.intdp
+    `define ASIPATH1         `SPARC_CORE1.sparc0.lsu.lsu.dctl
+    `define ASIDPPATH1       `SPARC_CORE1.sparc0.lsu.lsu.dctldp
+    `define ICTPATH1         `SPARC_CORE1.sparc0.ifu.ifu.ict
+    `define DCACHE1          `SPARC_CORE1.sparc0.lsu.lsu.dcache
+    `define INSTPATH1        `SPARC_CORE1.sparc0.ifu.ifu.fcl
+    `define PCPATH1          `SPARC_CORE1.sparc0.ifu.ifu
+    `define DVLD1            `SPARC_CORE1.sparc0.lsu.lsu.dva
+    `define DTAG1            `SPARC_CORE1.sparc0.lsu.lsu.dtag
+    `define SDTAG1           `SPARC_CORE1.sparc0.lsu.lsu.dtag
+    `define SDVLD1           `SPARC_CORE1.sparc0.lsu.lsu.dva
+    `define FFUPATH1         `SPARC_CORE1.sparc0.ffu.ffu
+    `define TLU_HYPER1       `SPARC_CORE1.sparc0.tlu.tlu.tlu_hyperv
+    `define IFQDP1           `SPARC_CORE1.sparc0.ifu.ifu.ifqdp
+    `define ITLBPATH1        `SPARC_CORE1.sparc0.ifu.ifu.itlb
+`else
+    `define TLPATH1          `SPARC_CORE1.sparc0.tlu.tcl
+    `define TS0PATH1         `SPARC_CORE1.sparc0.tlu.tsa0
+    `define TS1PATH1         `SPARC_CORE1.sparc0.tlu.tsa1
+    `define INTPATH1         `SPARC_CORE1.sparc0.tlu.intdp
+    `define ASIPATH1         `SPARC_CORE1.sparc0.lsu.dctl
+    `define ASIDPPATH1       `SPARC_CORE1.sparc0.lsu.dctldp
+    `define ICTPATH1         `SPARC_CORE1.sparc0.ifu.ict
+    `define DCACHE1          `SPARC_CORE1.sparc0.lsu.dcache
+    `define INSTPATH1        `SPARC_CORE1.sparc0.ifu.fcl
+    `define PCPATH1          `SPARC_CORE1.sparc0.ifu
+    `define DVLD1            `SPARC_CORE1.sparc0.lsu.dva
+    `define DTAG1            `SPARC_CORE1.sparc0.lsu.dtag
+    `define SDTAG1           `SPARC_CORE1.sparc0.lsu.dtag
+    `define SDVLD1           `SPARC_CORE1.sparc0.lsu.dva
+    `define FFUPATH1         `SPARC_CORE1.sparc0.ffu
+    `define TLU_HYPER1       `SPARC_CORE1.sparc0.tlu.tlu_hyperv
+    `define IFQDP1           `SPARC_CORE1.sparc0.ifu.ifqdp
+    `define ITLBPATH1        `SPARC_CORE1.sparc0.ifu.itlb
+`endif
+    `define CFG_ASI_PATH1    `SPARC_CORE1.sparc0.cfg_asi
+    
+
 
 `define ITAG0           `TOP_MOD.monitor.l_cache_mon0
 `define IVLD0           `TOP_MOD.monitor.l_cache_mon0

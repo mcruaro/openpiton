@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "util.h"
+#include "semaphore.h"
 
 #define NUM_WORDS 16
 
@@ -56,12 +57,17 @@ int main(int argc, char** argv) {
                                       0xCCCCCCCC};
 
   for (uint32_t k=0; k<NUM_WORDS; k++) {
+    printf("valor amo_cnt: %d\n", amo_cnt[k]);
     ATOMIC_OP(amo_cnt[k], (k+1), add, w);
+    printf("valor amo_cnt depois: %d\n", amo_cnt[k]);
   }
-
+  printf("\n\nFOR\n\n");
   uint32_t check, tmp;
   for (uint32_t k=0; k<NUM_WORDS; k++) {
+    printf("valor amo_cnt: %d\n", amo_cnt[k]);
     ATOMIC_FETCH_OP(tmp, amo_cnt[k], ((k+1)<<8), add, w);
+    printf("valor amo_cnt depois: %d\n", amo_cnt[k]);
+    printf("tmp: %d\n", tmp);
 
     check = golden[k] + (k+1);
     if(check != tmp) {
