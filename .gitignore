@@ -4,6 +4,7 @@
 *a.out
 
 # Ignore everything in model directory
+.vscode/*
 build/*
 !build/.keep
 
