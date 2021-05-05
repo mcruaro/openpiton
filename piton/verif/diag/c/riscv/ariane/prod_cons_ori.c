@@ -24,14 +24,14 @@ int produce_item(){
 }
 
 void insert_item(int item, int index){
-    printf("Prod inserting %d\n", item);
+    printf("Prod inserting %d\n", index);
     buffer[index] = item;
 }
 
 void consume_item(int index){
     int item;
     item = buffer[index];
-    printf("Cons removing %d\n", buffer[index]);
+    printf("Cons removing %d\n", index);
     buffer[index] = -1;
 }   
 
@@ -56,9 +56,10 @@ void consumer(){
         item = produce_item();
         down(&full);
         down(&mutex);
-        consume_item(full.count+1);
+        consume_item(full.count);
         up(&mutex);
-        up(&full);
+        up(&empty);
+        for (volatile int i = 0; i < 500; i++);
     }
     
 }
