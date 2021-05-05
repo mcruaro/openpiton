@@ -13,15 +13,61 @@ typedef struct {
 } semaphore;
 
 
-static inline void sema_init(semaphore *sem, int val)
-{
+static inline void sema_init(semaphore *sem, int val) {
     sem->lock = 0;
     sem->count = val;
 }
 
+void up(semaphore *sem){
 
-void up(semaphore *sem)
+    int fail;
+    int t0 = 1;
+
+    //Spin lock
+    do {
+        ATOMIC_FETCH_OP(fail, sem->lock, t0, swap, w.aq);
+    } while(fail);
+
+    sem->count++;
+    
+    t0 = 0;//Not necessary since the swap above put zero in t0
+    ATOMIC_OP(sem->lock, t0, swap, w.rl);
+}
+
+void down(semaphore *sem)
 {
+
+    int fail;
+    int t0;
+	//Try to get the lock to access critical section
+	while (1){
+		
+        t0 = 1;
+		//Spin lock
+        do {
+            ATOMIC_FETCH_OP(fail, sem->lock, t0, swap, w.aq);
+        } while(fail);
+
+		//Once achieved, test value of count 
+		if (sem->count > 0){
+			//If count > 0 decrement the count
+			sem->count--;
+			//Release the lock
+			t0 = 0;//Not necessary since the swap above put zero in t0
+            ATOMIC_OP(sem->lock, t0, swap, w.rl);
+			//Exit the while, releasing the thread
+			break;
+		} 
+		//Case count == 0 releases the lock and try again
+		t0 = 0;//Not necessary since the swap above put zero in t0
+        ATOMIC_OP(sem->lock, t0, swap, w.rl);
+	}
+
+
+}
+
+#if 0
+void up(semaphore *sem){
 
 	//Try to get the lock to access critical section
     arch_spin_lock(sem->lock);
@@ -66,5 +112,7 @@ void down(semaphore *sem)
 
 
 }
+
+#endif
 
 #endif //__SEMAPHORE_H

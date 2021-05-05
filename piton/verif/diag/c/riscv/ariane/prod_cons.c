@@ -9,43 +9,48 @@
 #include "semaphore.h"
 #include "barrier.h"
 
-semaphore sema_1;
-semaphore sema_2;
+#define N 5
+
 m_barrier barrier_it;
+semaphore mutex;
 
-void Core1(){
-    for(int i=0; i<5; i++){
-        barrier_wait(&barrier_it, 1);
-        //printf("Core 1 loop %d\n", i);
+
+void producer(){
+    int item = 0;
+    while(1){
+        down(&mutex);
+        printf("Producer %d\n",item++);
+        up(&mutex);
     }
+
 }
 
-void Core2(){
-    for(int i=0; i<5; i++){
-        barrier_wait(&barrier_it, 2);
-        //printf("Core 2 loop %d\n", i);
-        for (volatile int k = 0; k < 500; k++);
-        
+void consumer(){
+    int item = 0;
+    //barrier_wait(&barrier_it, 2);
+    while(1){
+        down(&mutex);
+        printf("Consumer %d\n",item++);
+        up(&mutex);
     }
+    
 }
-
 
 int main(int argc, char** argv) {
 
     uint32_t core_id, core_num;
-
-    sema_init(&sema_1, 1);
-    barrier_init(&barrier_it, 2);
-
     core_id = argv[0][0];
     core_num = argv[0][1];
 
+    sema_init(&mutex, 1);
+    barrier_init(&barrier_it, 2);
+
     switch(core_id){
         case 0:
-            Core1();
+            producer();
             break;
         case 1:
-            Core2();
+            consumer();
             break;
         default:
             printf("ERROR, unknown core_id = %d\n", core_id);
