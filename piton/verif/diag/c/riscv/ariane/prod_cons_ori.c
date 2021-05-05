@@ -7,15 +7,12 @@
 #include <stdio.h>
 #include "util.h"
 #include "semaphore.h"
-#include "barrier.h"
 
 #define N 5
 
-m_barrier barrier_it;
 semaphore mutex;
 semaphore empty;
 semaphore full;
-int buffer[N];
 
 int rand = 0;
 
@@ -25,14 +22,10 @@ int produce_item(){
 
 void insert_item(int item, int index){
     printf("Prod inserting %d\n", index);
-    buffer[index] = item;
 }
 
 void consume_item(int index){
-    int item;
-    item = buffer[index];
     printf("Cons removing %d\n", index);
-    buffer[index] = -1;
 }   
 
 void producer(){
@@ -59,6 +52,7 @@ void consumer(){
         consume_item(full.count);
         up(&mutex);
         up(&empty);
+        //Just to make consumer slower than producer
         for (volatile int i = 0; i < 1000; i++);
     }
     
@@ -73,12 +67,8 @@ int main(int argc, char** argv) {
     sema_init(&mutex, 1);
     sema_init(&empty, N);
     sema_init(&full, 0);
-    barrier_init(&barrier_it, 2);
+    //barrier_init(&barrier_it, 2); 2 is number of threads
 
-    for (int i = 0; i < N; i++) {
-        buffer[i] = -1;
-    }
-    
 
     switch(core_id){
         case 0:
@@ -92,9 +82,6 @@ int main(int argc, char** argv) {
     }
 
 
-    //volatile static uint32_t amo_lrsc[20];
-
-    
     return 0;
 
 }
