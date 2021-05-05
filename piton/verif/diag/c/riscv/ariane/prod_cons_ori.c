@@ -59,7 +59,7 @@ void consumer(){
         consume_item(full.count);
         up(&mutex);
         up(&empty);
-        for (volatile int i = 0; i < 500; i++);
+        for (volatile int i = 0; i < 1000; i++);
     }
     
 }

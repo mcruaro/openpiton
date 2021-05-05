@@ -18,51 +18,43 @@ static inline void sema_init(semaphore *sem, int val) {
     sem->count = val;
 }
 
-void up(semaphore *sem){
+static inline void up(semaphore *sem){
 
-    int fail;
-    int t0 = 1;
-
+    int unlocked;
     //Spin lock
     do {
-        ATOMIC_FETCH_OP(fail, sem->lock, t0, swap, w.aq);
-    } while(fail);
+        ATOMIC_FETCH_OP(unlocked, sem->lock, 1, swap, w.aq);
+    } while(unlocked);
 
     sem->count++;
     
-    t0 = 0;//Not necessary since the swap above put zero in t0
-    ATOMIC_OP(sem->lock, t0, swap, w.rl);
+    ATOMIC_OP(sem->lock, 0, swap, w.rl);
 }
 
-void down(semaphore *sem)
+static inline void down(semaphore *sem)
 {
 
-    int fail;
-    int t0;
+    int unlocked;
 	//Try to get the lock to access critical section
 	while (1){
 		
-        t0 = 1;
 		//Spin lock
         do {
-            ATOMIC_FETCH_OP(fail, sem->lock, t0, swap, w.aq);
-        } while(fail);
+            ATOMIC_FETCH_OP(unlocked, sem->lock, 1, swap, w.aq);
+        } while(unlocked);
 
 		//Once achieved, test value of count 
 		if (sem->count > 0){
 			//If count > 0 decrement the count
 			sem->count--;
 			//Release the lock
-			t0 = 0;//Not necessary since the swap above put zero in t0
-            ATOMIC_OP(sem->lock, t0, swap, w.rl);
+            ATOMIC_OP(sem->lock, 0, swap, w.rl);
 			//Exit the while, releasing the thread
 			break;
 		} 
 		//Case count == 0 releases the lock and try again
-		t0 = 0;//Not necessary since the swap above put zero in t0
-        ATOMIC_OP(sem->lock, t0, swap, w.rl);
+        ATOMIC_OP(sem->lock, 0, swap, w.rl);
 	}
-
 
 }
 
