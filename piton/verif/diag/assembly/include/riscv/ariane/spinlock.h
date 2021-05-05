@@ -43,13 +43,6 @@ static inline void arch_unlock(volatile unsigned int lock)
 		: "memory");
 }
 
-static inline void arch_spin_lock(volatile unsigned int lock)
-{
-	while (1) {
-		if (arch_spin_trylock(lock))
-			break;
-	}
-}
 
 
 
