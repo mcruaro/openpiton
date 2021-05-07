@@ -53,7 +53,7 @@ static inline void down(semaphore *sem)
 		
 		riscv_spin_lock(sem);
 
-		//Once achieved, test value of count 
+		//Once lock achieved, test value of count 
 		if (sem->count > 0){
 			//If count > 0 decrement the count
 			sem->count--;

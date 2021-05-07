@@ -42,25 +42,6 @@ static inline void barrier_wait(m_barrier *barr){
          } while(barr->passed == passed_old);
     }
    
-   /*
-    int passed_old = passed; // Should be evaluated before incrementing *bar*!
-
-    if(__sync_fetch_and_add(&bar,1) == (P - 1)) {
-        
-        // The last thread, faced barrier.
-        bar = 0;
-        // *bar* should be reseted strictly before updating of barriers counter.
-        __sync_synchronize(); 
-        passed++; // Mark barrier as passed.
-    
-    } else {
-
-        // Not the last thread. Wait others.
-        while(passed == passed_old) {};
-        // Need to synchronize cache with other threads, passed barrier.
-        __sync_synchronize();
-    }
-    */
 }
 
 

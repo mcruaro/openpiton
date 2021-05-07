@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include "util.h"
 #include "semaphore.h"
-#include "barrier.h"
 
 semaphore sema_1;
 semaphore sema_2;

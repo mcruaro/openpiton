@@ -35,10 +35,18 @@
 #define PITON_TEST_GOOD_END 0x8100000000ULL
 #define PITON_TEST_BAD_END  0x8200000000ULL
 
+//Base address of CLINT memory mapped register
+#define CLINT_CTRL_ADDR    0xfff1020000ULL
+
 
 extern void setStats(int enable);
 
 #include <stdint.h>
+
+//Return the clock cycles. core id is the hard id (core id)
+//Curiosity, running at 500MHz, this register will overflow after: 1169.8 years or continuous running.
+#define get_cycles(core_id) (*(volatile uint64_t *)(CLINT_CTRL_ADDR + (0xBFF8 + core_id*8)))
+
 
 // instantiation macros for atomic memory operation (non LR/SC)
 // see also

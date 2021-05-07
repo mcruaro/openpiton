@@ -1,18 +1,20 @@
 
 // Author: Marcelo Ruaro <marcelo.ruaro@univ-ubs.fr>, UBS Lorient
 // Date: 05.05.2021
-// Description: Simple dataflow application implementing fork and join
+// Description: Simple dataflow application implementing prod cons
 //
 #include <stdint.h>
 #include <stdio.h>
 #include "util.h"
 #include "semaphore.h"
+#include "barrier.h"
 
 #define N 5
 
 semaphore mutex;
 semaphore empty;
 semaphore full;
+m_barrier iter_barrier;
 
 int rand = 0;
 
@@ -31,6 +33,7 @@ void consume_item(int index){
 void producer(){
     int item;
     while(1){
+        //barrier_wait(&iter_barrier);
         item = produce_item();
         down(&empty);
         down(&mutex);
@@ -42,10 +45,10 @@ void producer(){
 }
 
 void consumer(){
-    //barrier_wait(&barrier_it, 2);
 
     int item;
     while(1){
+        //barrier_wait(&iter_barrier);
         item = produce_item();
         down(&full);
         down(&mutex);
@@ -67,7 +70,7 @@ int main(int argc, char** argv) {
     sema_init(&mutex, 1);
     sema_init(&empty, N);
     sema_init(&full, 0);
-    //barrier_init(&barrier_it, 2); 2 is number of threads
+    barrier_init(&iter_barrier, 2); //2 is number of threads
 
 
     switch(core_id){

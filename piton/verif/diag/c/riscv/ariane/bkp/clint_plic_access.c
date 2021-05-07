@@ -14,6 +14,7 @@
 //
 
 #include <stdio.h>
+#include "util.h"
 
 
 #define NHARTS       1
@@ -47,6 +48,10 @@ int main(int argc, char ** argv) {
           printf("CLINT: mtime %d = addr 0x%08x 0x%08x\n",k,((uint64_t)addr)>>32,((uint64_t)addr) & 0xFFFFFFFF);
           printf("CLINT: result = 0x%016x\n",*addr);
       }
+      printf("Cycles: %d\n", get_cycles(0));
+      printf("Cycles: %d\n", get_cycles(0));
+      printf("Cycles: %d\n", get_cycles(0));
+
 
       // printf("Reading PLIC registers...\n");
       // 
